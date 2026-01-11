@@ -16,24 +16,6 @@ local function getAliveInRoundUserIds()
 	return ids
 end
 
--- CLIENT REQUESTS
-spectateEvent.OnServerEvent:Connect(function(plr, action)
-	if action == "GetTargets" then
-		-- Only allow spectating if they're eliminated during a live round
-		-- (You can relax this if you want spectators anytime)
-		local inRound = plr:GetAttribute("InRound") == true
-		local alive = plr:GetAttribute("AliveInRound") == true
-		local allow = inRound and (not alive)
-
-		if not allow then
-			spectateEvent:FireClient(plr, "Targets", {}) -- deny silently
-			return
-		end
-
-		spectateEvent:FireClient(plr, "Targets", getAliveInRoundUserIds())
-	end
-end)
-
 -- API for RoundManager
 function SpectateService.SetRoundState(playersInRound: {Player}, isRoundRunning: boolean)
 	for _, p in ipairs(playersInRound) do

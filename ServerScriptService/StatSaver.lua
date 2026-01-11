@@ -43,10 +43,7 @@ local function writeInt(ls: Instance?, name: string, value: number)
 end
 
 local function loadPlayer(plr: Player)
-	-- Wait a moment for your RoundManager/leaderstats creator to run
-	task.wait(0.2)
-
-	local ls = getStatsFolder(plr)
+	local ls = plr:WaitForChild("leaderstats", 5)
 	if not ls then
 		-- If your game ever spawns player without leaderstats, we still won't crash
 		warn("[DataStoreSave] No leaderstats for", plr.Name)
