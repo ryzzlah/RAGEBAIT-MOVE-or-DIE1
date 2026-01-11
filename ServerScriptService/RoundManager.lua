@@ -217,8 +217,11 @@ local REVIVE_PENDING: {[Player]: boolean} = {}
 local TOKEN_WATCH_CONN: {[Player]: RBXScriptConnection} = {}
 
 local intensity = 0
+local intensityBase = 0
 local intensityResetAt = 0
 local nextStepTime = 0
+local matchTotalPlayers = 0
+local elimCount = 0
 
 local function setInRound(plr: Player, v: boolean) plr:SetAttribute("InRound", v) end
 local function setAliveInRound(plr: Player, v: boolean) plr:SetAttribute("AliveInRound", v) end
@@ -396,7 +399,10 @@ local function eliminate(plr: Player, reason: string?)
 	setAliveInRound(plr, false)
 
 	if MATCH_RUNNING then
-		intensity = 0
+		elimCount += 1
+		local total = math.max(matchTotalPlayers, 1)
+		intensityBase = math.clamp((elimCount / total) * 0.35, 0, 0.35)
+		intensity = intensityBase
 		intensityResetAt = os.clock()
 		nextStepTime = math.max(nextStepTime, intensityResetAt + INTENSITY_RESET_GRACE)
 	end
@@ -797,6 +803,9 @@ while true do
 	end
 
 	intensity = 0
+	intensityBase = 0
+	elimCount = 0
+	matchTotalPlayers = #matchPlayers
 	intensityResetAt = os.clock()
 	nextStepTime = os.clock() + START_INTERVAL
 
@@ -882,9 +891,10 @@ while true do
 
 		local tSinceReset = now - intensityResetAt
 		if tSinceReset < RESET_HOLD then
-			intensity = 0
+			intensity = intensityBase
 		else
-			intensity = math.clamp((tSinceReset - RESET_HOLD) / RAMP_TIME, 0, 1)
+			local t = (tSinceReset - RESET_HOLD) / RAMP_TIME
+			intensity = math.clamp(intensityBase + (1 - intensityBase) * t, 0, 1)
 		end
 
 		local stepInterval = lerp(START_INTERVAL, END_INTERVAL, intensity)
@@ -954,8 +964,11 @@ while true do
 	MATCH_RUNNING = false
 	PRE_ROUND = false
 	intensity = 0
+	intensityBase = 0
 	intensityResetAt = 0
 	nextStepTime = 0
+	matchTotalPlayers = 0
+	elimCount = 0
 
 	if joinConn then joinConn:Disconnect() end
 	if killConn then killConn:Disconnect() end
