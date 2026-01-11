@@ -47,8 +47,8 @@ local THREAT_CHANCE = 0.80
 local THREAT_RADIUS = 16
 
 -- Intensity pacing
-local RAMP_TIME = 25
-local RESET_HOLD = 1.0
+local RAMP_TIME = 45
+local RESET_HOLD = 2.0
 local INTENSITY_RESET_GRACE = 0.75
 
 -- ===== REWARDS =====
