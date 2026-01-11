@@ -770,6 +770,12 @@ while true do
 		task.defer(function()
 			if not MATCH_RUNNING then return end
 			ensureLeaderstats(plr)
+			matchState:FireClient(plr, true)
+			task.delay(1.0, function()
+				if MATCH_RUNNING and plr and plr.Parent == Players then
+					matchState:FireClient(plr, true)
+				end
+			end)
 			setElim(plr, true)
 			setInRound(plr, true)
 			setAliveInRound(plr, false)
