@@ -48,9 +48,9 @@ end
 
 local function safeSetOwned(plr: Player, category: string, itemId: string)
 	-- 1) Save if PlayerData exists
-	if PlayerData and PlayerData.SetOwned then
+	if PlayerData and PlayerData.MarkOwned then
 		pcall(function()
-			PlayerData.SetOwned(plr, category, itemId, true)
+			PlayerData.MarkOwned(plr, category, itemId)
 		end)
 	end
 
