@@ -225,6 +225,16 @@ local function alivePlayers(matchPlayers: {Player})
 	return t
 end
 
+local function countActiveMatchPlayers()
+	local n = 0
+	for _, plr in ipairs(CURRENT_MATCH_PLAYERS) do
+		if plr and plr.Parent == Players then
+			n += 1
+		end
+	end
+	return n
+end
+
 -- ===== SPECTATE =====
 -- Anyone can request targets during a running match as long as they are NOT alive in-round.
 spectateEvent.OnServerEvent:Connect(function(plr, action)
@@ -264,7 +274,7 @@ local function canPlayerRevive(plr: Player): (boolean, boolean, string)
 	end
 
 	-- If match is basically 1v1/2-player, no revive
-	if #CURRENT_MATCH_PLAYERS <= NO_REVIVES_IF_MATCH_SIZE_LEQ then
+	if countActiveMatchPlayers() <= NO_REVIVES_IF_MATCH_SIZE_LEQ then
 		return false, false, "No revives in 2-player matches."
 	end
 

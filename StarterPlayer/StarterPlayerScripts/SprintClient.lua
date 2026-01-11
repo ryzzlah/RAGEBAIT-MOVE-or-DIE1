@@ -6,6 +6,7 @@
 -- Adds camera FOV boost while sprinting (stable)
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UIS = game:GetService("UserInputService")
 local CAS = game:GetService("ContextActionService")
 local RunService = game:GetService("RunService")
@@ -13,10 +14,9 @@ local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local sprintEvent = ReplicatedStorage:WaitForChild("SprintIntent")
 
 -- ===== TUNABLES =====
-local BASE_SPEED_FALLBACK = 16
-local SPRINT_SPEED = 28
 local SPRINT_DURATION = 2.0
 local RECOVER_TIME = 5.0
 
@@ -44,8 +44,7 @@ local character, humanoid
 local stamina = 1.0
 local wantsSprint = false
 local isSprinting = false
-local baseSpeed = BASE_SPEED_FALLBACK
-local externalSpeedWatch = nil
+local lastSentSprint = false
 
 -- ===== FOV state =====
 local camera = workspace.CurrentCamera
@@ -178,32 +177,10 @@ end
 setStaminaUI(stamina)
 
 -- ===== SPEED HANDLING =====
-local function applySpeed()
-	if not humanoid then return end
-	if isSprinting then
-		humanoid.WalkSpeed = SPRINT_SPEED
-	else
-		humanoid.WalkSpeed = baseSpeed
-	end
-end
-
 local function attachCharacter(char)
 	character = char
 	humanoid = char:WaitForChild("Humanoid", 5)
 	if not humanoid then return end
-
-	baseSpeed = humanoid.WalkSpeed
-	if baseSpeed <= 0 then baseSpeed = BASE_SPEED_FALLBACK end
-
-	if externalSpeedWatch then externalSpeedWatch:Disconnect() end
-	externalSpeedWatch = humanoid:GetPropertyChangedSignal("WalkSpeed"):Connect(function()
-		if humanoid and not isSprinting then
-			baseSpeed = humanoid.WalkSpeed
-			if baseSpeed <= 0 then baseSpeed = BASE_SPEED_FALLBACK end
-		end
-	end)
-
-	applySpeed()
 end
 
 player.CharacterAdded:Connect(attachCharacter)
@@ -321,6 +298,10 @@ RunService.RenderStepped:Connect(function(dt)
 			if tweenOut then tweenOut:Play() end
 			lastSprintVisual = false
 		end
+		if lastSentSprint then
+			lastSentSprint = false
+			sprintEvent:FireServer(false)
+		end
 		return
 	end
 
@@ -353,7 +334,10 @@ RunService.RenderStepped:Connect(function(dt)
 
 	stamina = math.clamp(stamina, 0, 1)
 	setStaminaUI(stamina)
-	applySpeed()
+	if isSprinting ~= lastSentSprint then
+		lastSentSprint = isSprinting
+		sprintEvent:FireServer(isSprinting)
+	end
 
 	-- Camera FOV feel
 	if isSprinting ~= lastSprintVisual then
