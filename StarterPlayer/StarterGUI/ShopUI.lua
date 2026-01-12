@@ -423,7 +423,7 @@ end
 -- =========================
 -- Row builder (returns references so we can async-update)
 -- =========================
-local function addItemRow(labelText, subText, buttonText, onClick, disabled, forceOwned, colorDot)
+local function addItemRow(labelText, subText, buttonText, onClick, disabled, forceOwned, iconFillColor)
 	local row = mk(list, "Frame", {
 		Size=UDim2.new(1,0,0,66),
 		BackgroundColor3=ROW_BG,
@@ -436,32 +436,18 @@ local function addItemRow(labelText, subText, buttonText, onClick, disabled, for
 	local icon = mk(row, "ImageLabel", {
 		Size=UDim2.new(0,44,0,44),
 		Position=UDim2.new(0,12,0.5,-22),
-		BackgroundColor3=Color3.fromRGB(16,16,16),
+		BackgroundColor3=iconFillColor or Color3.fromRGB(16,16,16),
 		BorderSizePixel=0,
 		ZIndex=23,
 		ScaleType=Enum.ScaleType.Crop
 	})
 	mk(icon, "UICorner", {CornerRadius=UDim.new(1,0)})
-	mk(icon, "UIStroke", {Thickness=1, Color=Color3.fromRGB(55,55,55), Transparency=0})
+	mk(icon, "UIStroke", {Thickness=1, Color=Color3.fromRGB(45,45,45), Transparency=0})
 	setCircularIcon(icon, nil)
 
-	if colorDot then
-		local dot = mk(row, "Frame", {
-			Size=UDim2.new(0,12,0,12),
-			Position=UDim2.new(0,68,0,14),
-			BackgroundColor3=colorDot,
-			BorderSizePixel=0,
-			ZIndex=23
-		})
-		mk(dot, "UICorner", {CornerRadius=UDim.new(1,0)})
-		mk(dot, "UIStroke", {Thickness=1, Color=Color3.fromRGB(30,30,30), Transparency=0})
-	end
-
-	local textX = colorDot and 86 or 68
-	local textW = colorDot and 228 or 210
 	local textLbl = mk(row, "TextLabel", {
-		Size=UDim2.new(1,-textW,1,-16),
-		Position=UDim2.new(0,textX,0,8),
+		Size=UDim2.new(1,-210,1,-16),
+		Position=UDim2.new(0,68,0,8),
 		BackgroundTransparency=1,
 		TextXAlignment=Enum.TextXAlignment.Left,
 		TextYAlignment=Enum.TextYAlignment.Center,
@@ -621,8 +607,8 @@ local function renderCoinsCategory(catId: string)
 		if cat.id == catId then
 			for _, item in ipairs(cat.items) do
 				local owned = isOwnedAttr(cat.ownedCategory, item.itemId)
-				local dot = (cat.id == "Trails") and trailColorForItemId(item.itemId) or nil
-				addItemRow(item.name, item.desc, item.price, item.buy, false, owned, dot)
+				local fillColor = (cat.id == "Trails") and trailColorForItemId(item.itemId) or nil
+				addItemRow(item.name, item.desc, item.price, item.buy, false, owned, fillColor)
 			end
 			break
 		end
