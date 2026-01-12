@@ -34,16 +34,14 @@ local PRODUCT = {
 -- Accent
 local ACCENT = Color3.fromRGB(235, 65, 65)
 local ACCENT_2 = Color3.fromRGB(70, 170, 190)
-local ACCENT_DIM = Color3.fromRGB(140, 50, 50)
-local SHADOW_IMG = "rbxassetid://1316045217"
 
 -- Theme
 local BTN_GREY     = Color3.fromRGB(46,52,62)
-local BTN_GREY_DIM = Color3.fromRGB(32,36,44)
-local BTN_STROKE   = Color3.fromRGB(92,100,115)
-local ROW_BG       = Color3.fromRGB(24,28,36)
-local PANEL_BG     = Color3.fromRGB(16,20,26)
-local TOP_BG       = Color3.fromRGB(14,18,24)
+local BTN_GREY_DIM = Color3.fromRGB(34,38,46)
+local BTN_STROKE   = Color3.fromRGB(82,88,100)
+local ROW_BG       = Color3.fromRGB(26,30,38)
+local PANEL_BG     = Color3.fromRGB(18,22,28)
+local TOP_BG       = Color3.fromRGB(16,20,26)
 
 -- Remotes
 local buyWithCoins = ReplicatedStorage:WaitForChild("BuyWithCoins")
@@ -166,13 +164,6 @@ local btn = mk(gui, "TextButton", {
 })
 mk(btn, "UICorner", {CornerRadius=UDim.new(0,10)})
 mk(btn, "UIStroke", {Thickness=1, Color=BTN_STROKE, Transparency=0})
-mk(btn, "UIGradient", {
-	Rotation = 90,
-	Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(60, 70, 84)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(34, 40, 50)),
-	})
-})
 
 -- Overlay
 local overlay = mk(gui, "TextButton", {
@@ -188,17 +179,6 @@ local overlay = mk(gui, "TextButton", {
 
 -- Panel
 local PANEL_W, PANEL_H = 670, 380
-local shadow = mk(gui, "ImageLabel", {
-	Name="ShopShadow",
-	Size=UDim2.new(0,PANEL_W+28,0,PANEL_H+28),
-	Position=UDim2.new(0.5,-(PANEL_W+28)/2,0.5,-(PANEL_H+28)/2+8),
-	BackgroundTransparency=1,
-	Image=SHADOW_IMG,
-	ImageTransparency=0.35,
-	ScaleType=Enum.ScaleType.Slice,
-	SliceCenter=Rect.new(10,10,118,118),
-	ZIndex=19
-})
 local panel = mk(gui, "Frame", {
 	Name="ShopPanel",
 	Size=UDim2.new(0,PANEL_W,0,PANEL_H),
@@ -209,19 +189,13 @@ local panel = mk(gui, "Frame", {
 	ZIndex=20
 })
 mk(panel, "UICorner", {CornerRadius=UDim.new(0,16)})
-mk(panel, "UIStroke", {Thickness=2, Color=Color3.fromRGB(55,62,74), Transparency=0})
+mk(panel, "UIStroke", {Thickness=2, Color=Color3.fromRGB(45,50,60), Transparency=0})
 mk(panel, "UIGradient", {
 	Rotation = 135,
 	Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(26,32,40)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(12,16,22)),
+		ColorSequenceKeypoint.new(0, Color3.fromRGB(22,26,34)),
+		ColorSequenceKeypoint.new(1, Color3.fromRGB(14,18,24)),
 	})
-})
-mk(panel, "UIStroke", {
-	Name = "AccentStroke",
-	Thickness = 1,
-	Color = ACCENT_2,
-	Transparency = 0.4
 })
 
 -- Header
@@ -263,22 +237,6 @@ mk(panel, "Frame", {
 	ZIndex=22
 })
 
-local slash = mk(top, "Frame", {
-	Size=UDim2.new(0, 160, 1, 0),
-	Position=UDim2.new(1, -220, 0, 0),
-	BackgroundColor3=ACCENT_2,
-	BorderSizePixel=0,
-	ZIndex=21
-})
-mk(slash, "UIGradient", {
-	Rotation = 35,
-	Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 170, 190)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 120, 140)),
-	})
-})
-slash.BackgroundTransparency = 0.6
-
 mk(top, "TextLabel", {
 	Size=UDim2.new(1,-240,1,0),
 	Position=UDim2.new(0,16,0,0),
@@ -314,13 +272,6 @@ local closeBtn = mk(top, "TextButton", {
 })
 mk(closeBtn, "UICorner", {CornerRadius=UDim.new(1,0)})
 mk(closeBtn, "UIStroke", {Thickness=1, Color=Color3.fromRGB(90,20,20), Transparency=0})
-mk(closeBtn, "UIGradient", {
-	Rotation = 90,
-	Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, ACCENT),
-		ColorSequenceKeypoint.new(1, ACCENT_DIM),
-	})
-})
 
 local function makeLine(parent, rot)
 	local line = mk(parent, "Frame", {
@@ -394,13 +345,6 @@ local coinsTab = mk(tabs, "TextButton", {
 })
 mk(coinsTab, "UICorner", {CornerRadius=UDim.new(0,10)})
 local coinsStroke = mk(coinsTab, "UIStroke", {Thickness=1, Color=ACCENT, Transparency=0})
-local coinsGrad = mk(coinsTab, "UIGradient", {
-	Rotation = 90,
-	Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(70, 80, 96)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(36, 42, 52)),
-	})
-})
 
 local robuxTab = mk(tabs, "TextButton", {
 	Size=UDim2.new(0,140,1,0),
@@ -414,13 +358,6 @@ local robuxTab = mk(tabs, "TextButton", {
 })
 mk(robuxTab, "UICorner", {CornerRadius=UDim.new(0,10)})
 local robuxStroke = mk(robuxTab, "UIStroke", {Thickness=1, Color=BTN_STROKE, Transparency=0})
-local robuxGrad = mk(robuxTab, "UIGradient", {
-	Rotation = 90,
-	Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 54, 66)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 34, 42)),
-	})
-})
 
 local function setTab(activeCoins: boolean)
 	if activeCoins then
@@ -431,14 +368,6 @@ local function setTab(activeCoins: boolean)
 		robuxTab.BackgroundColor3 = BTN_GREY_DIM
 		robuxTab.TextColor3 = Color3.fromRGB(230,230,230)
 		robuxStroke.Color = BTN_STROKE
-		robuxGrad.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 54, 66)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 34, 42)),
-		})
-		coinsGrad.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 92, 110)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 46, 58)),
-		})
 	else
 		robuxTab.BackgroundColor3 = BTN_GREY
 		robuxTab.TextColor3 = Color3.fromRGB(255,255,255)
@@ -447,14 +376,6 @@ local function setTab(activeCoins: boolean)
 		coinsTab.BackgroundColor3 = BTN_GREY_DIM
 		coinsTab.TextColor3 = Color3.fromRGB(230,230,230)
 		coinsStroke.Color = BTN_STROKE
-		coinsGrad.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(48, 54, 66)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 34, 42)),
-		})
-		robuxGrad.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(80, 92, 110)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(40, 46, 58)),
-		})
 	end
 end
 
@@ -584,14 +505,6 @@ local function addItemRow(labelText, subText, buttonText, onClick, disabled, for
 	})
 	mk(b, "UICorner", {CornerRadius=UDim.new(0,10)})
 	local bStroke = mk(b, "UIStroke", {Thickness=1, Color=finalDisabled and BTN_STROKE or ACCENT, Transparency=0})
-	mk(b, "UIGradient", {
-		Name = "ButtonGradient",
-		Rotation = 90,
-		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, finalDisabled and Color3.fromRGB(44, 50, 60) or Color3.fromRGB(92, 38, 38)),
-			ColorSequenceKeypoint.new(1, finalDisabled and Color3.fromRGB(30, 34, 42) or Color3.fromRGB(60, 26, 26)),
-		})
-	})
 
 	if not finalDisabled then
 		b.MouseButton1Click:Connect(function()
@@ -605,31 +518,18 @@ end
 
 local function setButtonOwned(button: TextButton, buttonStroke: UIStroke, owned: boolean)
 	if not button or not button.Parent then return end
-	local grad = button:FindFirstChild("ButtonGradient")
 	if owned then
 		button.Text = "Owned"
 		button.Active = false
 		button.AutoButtonColor = false
 		button.BackgroundColor3 = BTN_GREY_DIM
 		buttonStroke.Color = BTN_STROKE
-		if grad then
-			grad.Color = ColorSequence.new({
-				ColorSequenceKeypoint.new(0, Color3.fromRGB(44, 50, 60)),
-				ColorSequenceKeypoint.new(1, Color3.fromRGB(30, 34, 42)),
-			})
-		end
 	else
 		button.Text = "BUY"
 		button.Active = true
 		button.AutoButtonColor = true
 		button.BackgroundColor3 = BTN_GREY
 		buttonStroke.Color = ACCENT
-		if grad then
-			grad.Color = ColorSequence.new({
-				ColorSequenceKeypoint.new(0, Color3.fromRGB(92, 38, 38)),
-				ColorSequenceKeypoint.new(1, Color3.fromRGB(60, 26, 26)),
-			})
-		end
 	end
 end
 
