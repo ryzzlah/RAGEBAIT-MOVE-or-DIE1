@@ -423,7 +423,7 @@ end
 -- =========================
 -- Row builder (returns references so we can async-update)
 -- =========================
-local function addItemRow(labelText, subText, buttonText, onClick, disabled, forceOwned)
+local function addItemRow(labelText, subText, buttonText, onClick, disabled, forceOwned, colorDot)
 	local row = mk(list, "Frame", {
 		Size=UDim2.new(1,0,0,66),
 		BackgroundColor3=ROW_BG,
@@ -445,9 +445,23 @@ local function addItemRow(labelText, subText, buttonText, onClick, disabled, for
 	mk(icon, "UIStroke", {Thickness=1, Color=Color3.fromRGB(55,55,55), Transparency=0})
 	setCircularIcon(icon, nil)
 
+	if colorDot then
+		local dot = mk(row, "Frame", {
+			Size=UDim2.new(0,12,0,12),
+			Position=UDim2.new(0,68,0,14),
+			BackgroundColor3=colorDot,
+			BorderSizePixel=0,
+			ZIndex=23
+		})
+		mk(dot, "UICorner", {CornerRadius=UDim.new(1,0)})
+		mk(dot, "UIStroke", {Thickness=1, Color=Color3.fromRGB(30,30,30), Transparency=0})
+	end
+
+	local textX = colorDot and 86 or 68
+	local textW = colorDot and 228 or 210
 	local textLbl = mk(row, "TextLabel", {
-		Size=UDim2.new(1,-210,1,-16),
-		Position=UDim2.new(0,68,0,8),
+		Size=UDim2.new(1,-textW,1,-16),
+		Position=UDim2.new(0,textX,0,8),
 		BackgroundTransparency=1,
 		TextXAlignment=Enum.TextXAlignment.Left,
 		TextYAlignment=Enum.TextYAlignment.Center,
@@ -532,6 +546,23 @@ local COIN_CATEGORIES = {
 	},
 }
 
+local TRAIL_COLORS = {
+	Trail_Yellow  = Color3.fromRGB(255, 221, 64),
+	Trail_Green   = Color3.fromRGB(80, 200, 120),
+	Trail_Blue    = Color3.fromRGB(80, 160, 255),
+	Trail_Orange  = Color3.fromRGB(255, 145, 70),
+	Trail_Red     = Color3.fromRGB(235, 70, 70),
+	Trail_Pink    = Color3.fromRGB(255, 120, 200),
+	Trail_Teal    = Color3.fromRGB(70, 210, 200),
+	Trail_Purple  = Color3.fromRGB(150, 90, 220),
+	Trail_Magenta = Color3.fromRGB(210, 80, 210),
+	Trail_White   = Color3.fromRGB(235, 235, 235),
+}
+
+local function trailColorForItemId(itemId: string)
+	return TRAIL_COLORS[itemId]
+end
+
 -- =========================
 -- Robux items
 -- =========================
@@ -590,7 +621,8 @@ local function renderCoinsCategory(catId: string)
 		if cat.id == catId then
 			for _, item in ipairs(cat.items) do
 				local owned = isOwnedAttr(cat.ownedCategory, item.itemId)
-				addItemRow(item.name, item.desc, item.price, item.buy, false, owned)
+				local dot = (cat.id == "Trails") and trailColorForItemId(item.itemId) or nil
+				addItemRow(item.name, item.desc, item.price, item.buy, false, owned, dot)
 			end
 			break
 		end
