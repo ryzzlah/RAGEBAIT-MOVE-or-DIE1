@@ -33,15 +33,14 @@ local PRODUCT = {
 
 -- Accent
 local ACCENT = Color3.fromRGB(235, 65, 65)
-local ACCENT_2 = Color3.fromRGB(70, 170, 190)
 
 -- Theme
-local BTN_GREY     = Color3.fromRGB(46,52,62)
-local BTN_GREY_DIM = Color3.fromRGB(34,38,46)
-local BTN_STROKE   = Color3.fromRGB(82,88,100)
-local ROW_BG       = Color3.fromRGB(26,30,38)
-local PANEL_BG     = Color3.fromRGB(18,22,28)
-local TOP_BG       = Color3.fromRGB(16,20,26)
+local BTN_GREY     = Color3.fromRGB(42,42,42)
+local BTN_GREY_DIM = Color3.fromRGB(32,32,32)
+local BTN_STROKE   = Color3.fromRGB(75,75,75)
+local ROW_BG       = Color3.fromRGB(24,24,24)
+local PANEL_BG     = Color3.fromRGB(18,18,18)
+local TOP_BG       = Color3.fromRGB(14,14,14)
 
 -- Remotes
 local buyWithCoins = ReplicatedStorage:WaitForChild("BuyWithCoins")
@@ -189,14 +188,7 @@ local panel = mk(gui, "Frame", {
 	ZIndex=20
 })
 mk(panel, "UICorner", {CornerRadius=UDim.new(0,16)})
-mk(panel, "UIStroke", {Thickness=2, Color=Color3.fromRGB(45,50,60), Transparency=0})
-mk(panel, "UIGradient", {
-	Rotation = 135,
-	Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(22,26,34)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(14,18,24)),
-	})
-})
+mk(panel, "UIStroke", {Thickness=2, Color=Color3.fromRGB(45,45,45), Transparency=0})
 
 -- Header
 local top = mk(panel, "Frame", {
@@ -213,13 +205,6 @@ mk(top, "Frame", {
 	BorderSizePixel=0,
 	ZIndex=21,
 })
-mk(top, "UIGradient", {
-	Rotation = 180,
-	Color = ColorSequence.new({
-		ColorSequenceKeypoint.new(0, Color3.fromRGB(24,30,38)),
-		ColorSequenceKeypoint.new(1, Color3.fromRGB(14,18,24)),
-	})
-})
 
 mk(panel, "Frame", {
 	Size=UDim2.new(1,0,0,2),
@@ -227,14 +212,6 @@ mk(panel, "Frame", {
 	BackgroundColor3=ACCENT,
 	BorderSizePixel=0,
 	ZIndex=21
-})
-
-mk(panel, "Frame", {
-	Size=UDim2.new(0, 140, 0, 2),
-	Position=UDim2.new(1, -156, 0, 54),
-	BackgroundColor3=ACCENT_2,
-	BorderSizePixel=0,
-	ZIndex=22
 })
 
 mk(top, "TextLabel", {
@@ -454,14 +431,7 @@ local function addItemRow(labelText, subText, buttonText, onClick, disabled, for
 		ZIndex=22
 	})
 	mk(row, "UICorner", {CornerRadius=UDim.new(0,12)})
-	mk(row, "UIStroke", {Thickness=1, Color=Color3.fromRGB(42,48,58), Transparency=0})
-	mk(row, "UIGradient", {
-		Rotation = 0,
-		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Color3.fromRGB(30,36,46)),
-			ColorSequenceKeypoint.new(1, Color3.fromRGB(20,24,32)),
-		})
-	})
+	mk(row, "UIStroke", {Thickness=1, Color=Color3.fromRGB(40,40,40), Transparency=0})
 
 	local icon = mk(row, "ImageLabel", {
 		Size=UDim2.new(0,44,0,44),
