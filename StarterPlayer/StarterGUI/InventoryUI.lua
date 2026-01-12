@@ -102,6 +102,23 @@ local function buildTrailsItems()
 	return items
 end
 
+local TRAIL_COLORS = {
+	Trail_Yellow  = Color3.fromRGB(255, 221, 64),
+	Trail_Green   = Color3.fromRGB(80, 200, 120),
+	Trail_Blue    = Color3.fromRGB(80, 160, 255),
+	Trail_Orange  = Color3.fromRGB(255, 145, 70),
+	Trail_Red     = Color3.fromRGB(235, 70, 70),
+	Trail_Pink    = Color3.fromRGB(255, 120, 200),
+	Trail_Teal    = Color3.fromRGB(70, 210, 200),
+	Trail_Purple  = Color3.fromRGB(150, 90, 220),
+	Trail_Magenta = Color3.fromRGB(210, 80, 210),
+	Trail_White   = Color3.fromRGB(235, 235, 235),
+}
+
+local function trailColorForItemId(itemId: string)
+	return TRAIL_COLORS[itemId]
+end
+
 -- ===== Inventory data =====
 local INVENTORY_CATEGORIES = {
 	{
@@ -365,7 +382,7 @@ local list = mk(panel, "ScrollingFrame", {
 mk(list, "UIListLayout", {Padding=UDim.new(0,10), SortOrder=Enum.SortOrder.LayoutOrder})
 mk(list, "UIPadding", {PaddingTop=UDim.new(0,4), PaddingBottom=UDim.new(0,10)})
 
-local function addRow(itemName, subText, buttonText, buttonColor, onClick, disabled)
+local function addRow(itemName, subText, buttonText, buttonColor, onClick, disabled, iconFillColor)
 	local row = mk(list, "Frame", {
 		Size=UDim2.new(1,0,0,66),
 		BackgroundColor3=ROW_BG,
@@ -376,9 +393,23 @@ local function addRow(itemName, subText, buttonText, buttonColor, onClick, disab
 	mk(row, "UICorner", {CornerRadius=UDim.new(0,12)})
 	mk(row, "UIStroke", {Thickness=1, Color=Color3.fromRGB(45,45,55), Transparency=0})
 
+	if iconFillColor then
+		local icon = mk(row, "Frame", {
+			Size=UDim2.new(0,44,0,44),
+			Position=UDim2.new(0,12,0.5,-22),
+			BackgroundColor3=iconFillColor,
+			BorderSizePixel=0,
+			ZIndex=23
+		})
+		mk(icon, "UICorner", {CornerRadius=UDim.new(1,0)})
+		mk(icon, "UIStroke", {Thickness=1, Color=Color3.fromRGB(45,45,55), Transparency=0})
+	end
+
+	local textX = iconFillColor and 68 or 14
+	local textW = iconFillColor and 210 or 160
 	mk(row, "TextLabel", {
-		Size=UDim2.new(1,-160,1,-16),
-		Position=UDim2.new(0,14,0,8),
+		Size=UDim2.new(1,-textW,1,-16),
+		Position=UDim2.new(0,textX,0,8),
 		BackgroundTransparency=1,
 		TextXAlignment=Enum.TextXAlignment.Left,
 		TextYAlignment=Enum.TextYAlignment.Center,
@@ -458,6 +489,7 @@ local function renderCategory(catId)
 
 			local sub = isEquipped and "Equipped ✅" or (item.desc or "")
 
+			local iconColor = (foundCat.id == "Trails") and trailColorForItemId(item.itemId) or nil
 			addRow(item.name, sub, btnText, btnColor, function()
 				if pendingLock[foundCat.slot] then return end
 
@@ -487,12 +519,12 @@ local function renderCategory(catId)
 						end
 					end)
 				end
-			end, false)
+			end, false, iconColor)
 		end
 	end
 
 	if ownedCount == 0 then
-		addRow("Nothing owned here", "Buy something in the Shop first.", "OK", BTN_DIM, function() end, true)
+		addRow("Nothing owned here", "Buy something in the Shop first.", "OK", BTN_DIM, function() end, true, nil)
 	end
 
 	for _, cat in ipairs(INVENTORY_CATEGORIES) do
