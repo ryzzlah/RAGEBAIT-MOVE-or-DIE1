@@ -21,7 +21,7 @@ Players.RespawnTime = 1.0
 -- Difficulty tuning (start -> end)
 local STEP_INTERVAL = {0.95, 0.75, 0.60, 0.48}
 local BREAKS_PER_STEP = {1, 2, 3, 5}
-local RADIUS_FRACTION = {1.0, 1.0}
+local RADIUS_FRACTION = {0.95, 0.78, 0.58, 0.42}
 
 local START_INTERVAL = STEP_INTERVAL[1]
 local END_INTERVAL = STEP_INTERVAL[#STEP_INTERVAL]
