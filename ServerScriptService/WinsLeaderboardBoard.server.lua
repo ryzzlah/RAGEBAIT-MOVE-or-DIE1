@@ -1,5 +1,5 @@
--- ServerScriptService/WinsLeaderboardBoard.server.lua
--- Put this Script under Workspace.WinsLeaderboard.Model.Scoreboard (replace globalLeaderboard).
+-- WinsLeaderboardBoard.server.lua
+-- Put this Script under Workspace.WinsLeaderboard.Scoreboard.globalLeaderboard (Folder).
 
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
@@ -10,18 +10,13 @@ local ods = DataStoreService:GetOrderedDataStore(STORE_NAME)
 local primaryColor = Color3.new(1, 1, 1)
 local secondaryColor = Color3.new(0.815686, 0.815686, 0.815686)
 
-local function getRootModel()
-	local node = script.Parent
-	while node and node.Parent and node.Parent:IsA("Model") do
-		node = node.Parent
-	end
-	return node
-end
-
 local function getScrollingFrame()
-	local root = getRootModel()
-	if not root then return nil end
-	local gui = root:FindFirstChildWhichIsA("SurfaceGui", true)
+	local scoreboard = script.Parent:FindFirstAncestor("Scoreboard")
+	if not scoreboard then
+		scoreboard = script.Parent.Parent
+	end
+	if not scoreboard then return nil end
+	local gui = scoreboard:FindFirstChildWhichIsA("SurfaceGui", true)
 	if not gui then return nil end
 	return gui:FindFirstChildWhichIsA("ScrollingFrame", true)
 end
@@ -39,7 +34,7 @@ local function findInRow(row: Instance, name: string)
 end
 
 local function updateBoard(scroller: ScrollingFrame, data)
-	local template = script:FindFirstChild("Frame")
+	local template = script.Parent:FindFirstChild("Frame") or script:FindFirstChild("Frame")
 	if not template then
 		warn("[WinsLeaderboard] Missing Frame template under script.")
 		return
