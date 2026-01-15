@@ -764,6 +764,23 @@ while true do
 		teleportToArena(plr)
 	end
 
+	-- Non-participants stay in lobby but should spectate during the match
+	local isMatchPlayer: {[Player]: boolean} = {}
+	for _, plr in ipairs(matchPlayers) do
+		isMatchPlayer[plr] = true
+	end
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if not isMatchPlayer[plr] then
+			ensureLeaderstats(plr)
+			setElim(plr, true)
+			setInRound(plr, true)
+			setAliveInRound(plr, false)
+			if not plr.Character then plr:LoadCharacter() end
+			task.wait(0.02)
+			teleportToLobby(plr)
+		end
+	end
+
 	-- Anyone who joins mid-match becomes a spectator (so they get spectate button)
 	local joinConn
 	joinConn = Players.PlayerAdded:Connect(function(plr)
