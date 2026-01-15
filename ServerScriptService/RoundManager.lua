@@ -146,6 +146,7 @@ local function ensureLeaderstats(plr: Player)
 	if plr:GetAttribute("AliveInRound") == nil then plr:SetAttribute("AliveInRound", false) end
 	if plr:GetAttribute("Eliminated") == nil then plr:SetAttribute("Eliminated", false) end
 	if plr:GetAttribute("ReviveTokens") == nil then plr:SetAttribute("ReviveTokens", 0) end
+	if plr:GetAttribute("MatchParticipant") == nil then plr:SetAttribute("MatchParticipant", false) end
 end
 
 Players.PlayerAdded:Connect(ensureLeaderstats)
@@ -226,6 +227,7 @@ local elimCount = 0
 local function setInRound(plr: Player, v: boolean) plr:SetAttribute("InRound", v) end
 local function setAliveInRound(plr: Player, v: boolean) plr:SetAttribute("AliveInRound", v) end
 local function setElim(plr: Player, v: boolean) plr:SetAttribute("Eliminated", v) end
+local function setMatchParticipant(plr: Player, v: boolean) plr:SetAttribute("MatchParticipant", v) end
 local function isElim(plr: Player): boolean return plr:GetAttribute("Eliminated") == true end
 
 local function alivePlayers(matchPlayers: {Player})
@@ -759,6 +761,7 @@ while true do
 		setElim(plr, false)
 		setInRound(plr, true)
 		setAliveInRound(plr, true)
+		setMatchParticipant(plr, true)
 
 		task.wait(0.03)
 		teleportToArena(plr)
@@ -775,6 +778,7 @@ while true do
 			setElim(plr, true)
 			setInRound(plr, true)
 			setAliveInRound(plr, false)
+			setMatchParticipant(plr, false)
 		end
 	end
 
@@ -793,6 +797,7 @@ while true do
 			setElim(plr, true)
 			setInRound(plr, true)
 			setAliveInRound(plr, false)
+			setMatchParticipant(plr, false)
 			if not plr.Character then plr:LoadCharacter() end
 			task.wait(0.05)
 			teleportToLobby(plr)
@@ -1006,6 +1011,7 @@ while true do
 		setElim(plr, true)
 		setInRound(plr, false)
 		setAliveInRound(plr, false)
+		setMatchParticipant(plr, false)
 
 		reviveRemote:FireClient(plr, "Hide")
 		teleportToLobby(plr)
@@ -1017,6 +1023,7 @@ while true do
 			setInRound(plr, false)
 			setAliveInRound(plr, false)
 			setElim(plr, true)
+			setMatchParticipant(plr, false)
 			reviveRemote:FireClient(plr, "Hide")
 		end
 	end

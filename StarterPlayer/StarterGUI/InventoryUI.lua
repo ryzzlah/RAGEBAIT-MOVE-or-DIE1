@@ -14,6 +14,7 @@ local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 local matchState = ReplicatedStorage:WaitForChild("MatchState")
 local equipEvent = ReplicatedStorage:WaitForChild("EquipItem")
+local inMatch = false
 
 -- RemoteFunction to fetch premium trail ids (folder names)
 local getPremiumTrailIds = ReplicatedStorage:WaitForChild("GetPremiumTrailIds")
@@ -237,14 +238,31 @@ end
 
 -- ===== Match state hide =====
 matchState.OnClientEvent:Connect(function(inMatch)
-	guiButtons.Enabled = not inMatch
-	guiPanel.Enabled = not inMatch
-	if inMatch then
+	inMatch = (inMatch == true)
+	local participant = player:GetAttribute("MatchParticipant") == true
+	guiButtons.Enabled = (not inMatch) or (not participant)
+	guiPanel.Enabled = (not inMatch) or (not participant)
+	if inMatch and participant then
 		local p = guiPanel:FindFirstChild("InventoryPanel")
 		local o = guiPanel:FindFirstChild("Overlay")
 		if p then p.Visible = false end
 		if o then o.Visible = false end
 		guiPanel.Enabled = false
+	end
+end)
+
+player:GetAttributeChangedSignal("MatchParticipant"):Connect(function()
+	local participant = player:GetAttribute("MatchParticipant") == true
+	if inMatch then
+		guiButtons.Enabled = not participant
+		guiPanel.Enabled = not participant
+		if participant then
+			local p = guiPanel:FindFirstChild("InventoryPanel")
+			local o = guiPanel:FindFirstChild("Overlay")
+			if p then p.Visible = false end
+			if o then o.Visible = false end
+			guiPanel.Enabled = false
+		end
 	end
 end)
 

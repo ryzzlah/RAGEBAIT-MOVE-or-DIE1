@@ -45,6 +45,7 @@ local TOP_BG       = Color3.fromRGB(14,14,14)
 -- Remotes
 local buyWithCoins = ReplicatedStorage:WaitForChild("BuyWithCoins")
 local matchState   = ReplicatedStorage:WaitForChild("MatchState")
+local inMatch = false
 
 local shopResult = ReplicatedStorage:FindFirstChild("ShopResult")
 if not shopResult then
@@ -138,13 +139,28 @@ local gui = mk(playerGui, "ScreenGui", {
 	DisplayOrder = 100,
 })
 
-matchState.OnClientEvent:Connect(function(inMatch)
-	gui.Enabled = not inMatch
-	if inMatch then
+matchState.OnClientEvent:Connect(function(v)
+	inMatch = (v == true)
+	local participant = player:GetAttribute("MatchParticipant") == true
+	gui.Enabled = (not inMatch) or (not participant)
+	if inMatch and participant then
 		local p = gui:FindFirstChild("ShopPanel")
 		local o = gui:FindFirstChild("Overlay")
 		if p then p.Visible = false end
 		if o then o.Visible = false end
+	end
+end)
+
+player:GetAttributeChangedSignal("MatchParticipant"):Connect(function()
+	local participant = player:GetAttribute("MatchParticipant") == true
+	if inMatch then
+		gui.Enabled = not participant
+		if participant then
+			local p = gui:FindFirstChild("ShopPanel")
+			local o = gui:FindFirstChild("Overlay")
+			if p then p.Visible = false end
+			if o then o.Visible = false end
+		end
 	end
 end)
 
