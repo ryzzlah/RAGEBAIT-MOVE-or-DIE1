@@ -69,6 +69,22 @@ local btn = mk(gui, "TextButton", {
 mk(btn, "UICorner", {CornerRadius=UDim.new(0,10)})
 mk(btn, "UIStroke", {Thickness=1, Color=ACCENT, Transparency=0})
 
+local function isMobile()
+	return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+end
+
+local function positionAdminButton()
+	if isMobile() then
+		btn.AnchorPoint = Vector2.new(0.5, 1)
+		btn.Position = UDim2.new(0.5, 0, 1, -90)
+	else
+		btn.AnchorPoint = Vector2.new(0, 0)
+		btn.Position = UDim2.new(0, 20, 0.5, -78)
+	end
+end
+
+positionAdminButton()
+
 local overlay = mk(gui, "TextButton", {
 	Name="Overlay",
 	Size=UDim2.new(1,0,1,0),
@@ -635,3 +651,26 @@ end)
 
 setTab("Players")
 refreshTabStyles("Players")
+
+-- Hide admin button when shop panel is open
+local function hookShopVisibility()
+	local shopGui = playerGui:FindFirstChild("ShopGui")
+	if not shopGui then return end
+	local shopPanel = shopGui:FindFirstChild("ShopPanel")
+	if not shopPanel then return end
+
+	local function refresh()
+		btn.Visible = not shopPanel.Visible
+	end
+
+	shopPanel:GetPropertyChangedSignal("Visible"):Connect(refresh)
+	refresh()
+end
+
+playerGui.ChildAdded:Connect(function(child)
+	if child.Name == "ShopGui" then
+		task.defer(hookShopVisibility)
+	end
+end)
+
+hookShopVisibility()
