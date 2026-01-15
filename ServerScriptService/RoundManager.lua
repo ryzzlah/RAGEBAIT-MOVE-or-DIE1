@@ -775,9 +775,6 @@ while true do
 			setElim(plr, true)
 			setInRound(plr, true)
 			setAliveInRound(plr, false)
-			if not plr.Character then plr:LoadCharacter() end
-			task.wait(0.02)
-			teleportToLobby(plr)
 		end
 	end
 
