@@ -51,6 +51,7 @@ local gui = mk(playerGui, "ScreenGui", {
 	IgnoreGuiInset = true,
 	Enabled = true,
 	DisplayOrder = 120,
+	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 })
 
 local btn = mk(gui, "TextButton", {
@@ -76,7 +77,7 @@ local overlay = mk(gui, "TextButton", {
 	Text="",
 	Visible=false,
 	AutoButtonColor=false,
-	ZIndex=10
+	ZIndex=90
 })
 
 local PANEL_W, PANEL_H = 720, 420
@@ -87,16 +88,24 @@ local panel = mk(gui, "Frame", {
 	BackgroundColor3=PANEL_BG,
 	BorderSizePixel=0,
 	Visible=false,
-	ZIndex=20
+	ZIndex=100
 })
 mk(panel, "UICorner", {CornerRadius=UDim.new(0,16)})
 mk(panel, "UIStroke", {Thickness=2, Color=Color3.fromRGB(45,45,55), Transparency=0})
+
+local function setAdminVisible(visible: boolean)
+	gui.Enabled = visible
+	if not visible then
+		overlay.Visible = false
+		panel.Visible = false
+	end
+end
 
 local top = mk(panel, "Frame", {
 	Size=UDim2.new(1,0,0,54),
 	BackgroundColor3=TOP_BG,
 	BorderSizePixel=0,
-	ZIndex=21,
+	ZIndex=101,
 })
 mk(top, "UICorner", {CornerRadius=UDim.new(0,16)})
 mk(top, "Frame", {
@@ -104,14 +113,14 @@ mk(top, "Frame", {
 	Position=UDim2.new(0,0,0.5,0),
 	BackgroundColor3=TOP_BG,
 	BorderSizePixel=0,
-	ZIndex=21,
+	ZIndex=101,
 })
 mk(panel, "Frame", {
 	Size=UDim2.new(1,0,0,2),
 	Position=UDim2.new(0,0,0,54),
 	BackgroundColor3=ACCENT,
 	BorderSizePixel=0,
-	ZIndex=21
+	ZIndex=101
 })
 
 mk(top, "TextLabel", {
@@ -123,7 +132,7 @@ mk(top, "TextLabel", {
 	TextScaled=true,
 	Font=Enum.Font.GothamBold,
 	TextColor3=Color3.fromRGB(255,255,255),
-	ZIndex=22
+	ZIndex=102
 })
 
 local closeBtn = mk(top, "TextButton", {
@@ -132,7 +141,7 @@ local closeBtn = mk(top, "TextButton", {
 	BackgroundColor3=ACCENT,
 	Text="",
 	AutoButtonColor=true,
-	ZIndex=22
+	ZIndex=102
 })
 mk(closeBtn, "UICorner", {CornerRadius=UDim.new(1,0)})
 mk(closeBtn, "UIStroke", {Thickness=1, Color=Color3.fromRGB(90,20,90), Transparency=0})
@@ -149,7 +158,7 @@ local tabs = mk(panel, "Frame", {
 	Size=UDim2.new(1,-32,0,38),
 	Position=UDim2.new(0,16,0,68),
 	BackgroundTransparency=1,
-	ZIndex=21
+	ZIndex=101
 })
 local tabLayout = mk(tabs, "UIListLayout", {
 	FillDirection = Enum.FillDirection.Horizontal,
@@ -166,7 +175,7 @@ local function makeTab(text)
 		TextColor3=Color3.fromRGB(230,230,230),
 		TextScaled=true,
 		Font=Enum.Font.GothamBold,
-		ZIndex=22
+		ZIndex=102
 	})
 	mk(b, "UICorner", {CornerRadius=UDim.new(0,10)})
 	mk(b, "UIStroke", {Thickness=1, Color=BTN_STROKE, Transparency=0})
@@ -181,7 +190,7 @@ local content = mk(panel, "Frame", {
 	Size=UDim2.new(1,-32,1,-120),
 	Position=UDim2.new(0,16,0,110),
 	BackgroundTransparency=1,
-	ZIndex=21
+	ZIndex=101
 })
 
 local function makeSection(name)
@@ -190,7 +199,7 @@ local function makeSection(name)
 		Size=UDim2.new(1,0,1,0),
 		BackgroundTransparency=1,
 		Visible=false,
-		ZIndex=21
+		ZIndex=101
 	})
 	return f
 end
@@ -243,6 +252,8 @@ local playersList = mk(playersSection, "ScrollingFrame", {
 	ScrollBarThickness=6,
 	AutomaticCanvasSize=Enum.AutomaticSize.Y,
 	CanvasSize=UDim2.new(0,0,0,0),
+	ZIndex=102,
+	Active=true,
 })
 mk(playersList, "UIListLayout", {Padding=UDim.new(0,6), SortOrder=Enum.SortOrder.LayoutOrder})
 
@@ -250,6 +261,7 @@ local actions = mk(playersSection, "Frame", {
 	Size=UDim2.new(1,-280,1,0),
 	Position=UDim2.new(0,280,0,0),
 	BackgroundTransparency=1,
+	ZIndex=102,
 })
 
 local selectedLabel = mk(actions, "TextLabel", {
@@ -260,6 +272,7 @@ local selectedLabel = mk(actions, "TextLabel", {
 	Font=Enum.Font.GothamBold,
 	TextSize=18,
 	TextColor3=Color3.fromRGB(255,255,255),
+	ZIndex=103,
 })
 
 local function makeActionButton(text, y)
@@ -272,6 +285,7 @@ local function makeActionButton(text, y)
 		TextScaled=true,
 		Font=Enum.Font.GothamBold,
 		AutoButtonColor=true,
+		ZIndex=103,
 	})
 	mk(b, "UICorner", {CornerRadius=UDim.new(0,10)})
 	mk(b, "UIStroke", {Thickness=1, Color=ACCENT, Transparency=0})
@@ -295,6 +309,7 @@ local minutesBox = mk(actions, "TextBox", {
 	TextColor3=Color3.fromRGB(255,255,255),
 	Font=Enum.Font.GothamBold,
 	TextScaled=true,
+	ZIndex=103,
 })
 mk(minutesBox, "UICorner", {CornerRadius=UDim.new(0,6)})
 
@@ -307,6 +322,7 @@ local coinsBox = mk(actions, "TextBox", {
 	TextColor3=Color3.fromRGB(255,255,255),
 	Font=Enum.Font.GothamBold,
 	TextScaled=true,
+	ZIndex=103,
 })
 mk(coinsBox, "UICorner", {CornerRadius=UDim.new(0,6)})
 
@@ -319,6 +335,7 @@ local reasonBox = mk(actions, "TextBox", {
 	TextColor3=Color3.fromRGB(255,255,255),
 	Font=Enum.Font.Gotham,
 	TextScaled=true,
+	ZIndex=103,
 })
 mk(reasonBox, "UICorner", {CornerRadius=UDim.new(0,6)})
 
@@ -338,6 +355,7 @@ local function refreshPlayers()
 			TextScaled=true,
 			Font=Enum.Font.GothamBold,
 			AutoButtonColor=true,
+			ZIndex=103,
 		})
 		mk(b, "UICorner", {CornerRadius=UDim.new(0,8)})
 		mk(b, "UIStroke", {Thickness=1, Color=BTN_STROKE, Transparency=0})
@@ -401,6 +419,7 @@ end)
 local catBar = mk(itemsSection, "Frame", {
 	Size=UDim2.new(1,0,0,32),
 	BackgroundTransparency=1,
+	ZIndex=102,
 })
 local catLayout = mk(catBar, "UIListLayout", {
 	FillDirection = Enum.FillDirection.Horizontal,
@@ -417,6 +436,8 @@ local itemsList = mk(itemsSection, "ScrollingFrame", {
 	ScrollBarThickness=6,
 	AutomaticCanvasSize=Enum.AutomaticSize.Y,
 	CanvasSize=UDim2.new(0,0,0,0),
+	ZIndex=102,
+	Active=true,
 })
 mk(itemsList, "UIListLayout", {Padding=UDim.new(0,6), SortOrder=Enum.SortOrder.LayoutOrder})
 
@@ -429,6 +450,7 @@ local giveItemBtn = mk(itemsSection, "TextButton", {
 	TextScaled=true,
 	Font=Enum.Font.GothamBold,
 	AutoButtonColor=true,
+	ZIndex=103,
 })
 mk(giveItemBtn, "UICorner", {CornerRadius=UDim.new(0,10)})
 mk(giveItemBtn, "UIStroke", {Thickness=1, Color=ACCENT, Transparency=0})
@@ -447,6 +469,7 @@ local function renderItems()
 			TextScaled=true,
 			Font=Enum.Font.Gotham,
 			AutoButtonColor=true,
+			ZIndex=103,
 		})
 		mk(b, "UICorner", {CornerRadius=UDim.new(0,8)})
 		mk(b, "UIStroke", {Thickness=1, Color=BTN_STROKE, Transparency=0})
@@ -465,6 +488,7 @@ local function makeCatBtn(text)
 		TextScaled=true,
 		Font=Enum.Font.GothamBold,
 		AutoButtonColor=true,
+		ZIndex=103,
 	})
 	mk(b, "UICorner", {CornerRadius=UDim.new(0,8)})
 	mk(b, "UIStroke", {Thickness=1, Color=BTN_STROKE, Transparency=0})
@@ -499,6 +523,7 @@ local selfFly = mk(selfSection, "TextButton", {
 	TextScaled=true,
 	Font=Enum.Font.GothamBold,
 	AutoButtonColor=true,
+	ZIndex=102,
 })
 mk(selfFly, "UICorner", {CornerRadius=UDim.new(0,10)})
 mk(selfFly, "UIStroke", {Thickness=1, Color=ACCENT, Transparency=0})
@@ -512,6 +537,7 @@ local selfGod = mk(selfSection, "TextButton", {
 	TextScaled=true,
 	Font=Enum.Font.GothamBold,
 	AutoButtonColor=true,
+	ZIndex=102,
 })
 mk(selfGod, "UICorner", {CornerRadius=UDim.new(0,10)})
 mk(selfGod, "UIStroke", {Thickness=1, Color=ACCENT, Transparency=0})
@@ -525,6 +551,7 @@ local selfSpeedBox = mk(selfSection, "TextBox", {
 	TextColor3=Color3.fromRGB(255,255,255),
 	Font=Enum.Font.GothamBold,
 	TextScaled=true,
+	ZIndex=102,
 })
 mk(selfSpeedBox, "UICorner", {CornerRadius=UDim.new(0,6)})
 
@@ -537,6 +564,7 @@ local selfSpeed = mk(selfSection, "TextButton", {
 	TextScaled=true,
 	Font=Enum.Font.GothamBold,
 	AutoButtonColor=true,
+	ZIndex=102,
 })
 mk(selfSpeed, "UICorner", {CornerRadius=UDim.new(0,10)})
 mk(selfSpeed, "UIStroke", {Thickness=1, Color=ACCENT, Transparency=0})
@@ -552,6 +580,7 @@ local selfSpeedOff = mk(selfSection, "TextButton", {
 	TextScaled=true,
 	Font=Enum.Font.GothamBold,
 	AutoButtonColor=true,
+	ZIndex=102,
 })
 mk(selfSpeedOff, "UICorner", {CornerRadius=UDim.new(0,10)})
 mk(selfSpeedOff, "UIStroke", {Thickness=1, Color=BTN_STROKE, Transparency=0})
