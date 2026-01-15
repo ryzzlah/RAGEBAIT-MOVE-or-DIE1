@@ -54,6 +54,9 @@ local lastSprintVisual = false
 local lastFovToggle = 0
 local FOV_TOGGLE_COOLDOWN = 0.08
 
+local UI_FADE_TIME = 0.2
+local UI_HIDE_THRESHOLD = 0.999
+
 local function isMobile()
 	return UIS.TouchEnabled and not UIS.KeyboardEnabled
 end
@@ -158,10 +161,51 @@ local function makeUI()
 	amtCorner.CornerRadius = UDim.new(0, 8)
 	amtCorner.Parent = amt
 
-	return gui, amt, icon
+	return gui, amt, icon, bg, stroke, fill
 end
 
-local sprintGui, staminaFill, iconLabel = makeUI()
+local sprintGui, staminaFill, iconLabel, barBg, barStroke, barFill = makeUI()
+local uiVisible = true
+local uiTweens: {Tween} = {}
+local uiBase = {
+	bg = barBg.BackgroundTransparency,
+	fill = barFill.BackgroundTransparency,
+	amt = staminaFill.BackgroundTransparency,
+	stroke = barStroke.Transparency,
+	icon = iconLabel.TextTransparency,
+}
+
+local function cancelUiTweens()
+	for _, t in ipairs(uiTweens) do
+		t:Cancel()
+	end
+	table.clear(uiTweens)
+end
+
+local function setSprintUiVisible(visible: boolean)
+	if uiVisible == visible then return end
+	uiVisible = visible
+	cancelUiTweens()
+
+	local target = visible and uiBase or {
+		bg = 1,
+		fill = 1,
+		amt = 1,
+		stroke = 1,
+		icon = 1,
+	}
+
+	local info = TweenInfo.new(UI_FADE_TIME, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	table.insert(uiTweens, TweenService:Create(barBg, info, {BackgroundTransparency = target.bg}))
+	table.insert(uiTweens, TweenService:Create(barFill, info, {BackgroundTransparency = target.fill}))
+	table.insert(uiTweens, TweenService:Create(staminaFill, info, {BackgroundTransparency = target.amt}))
+	table.insert(uiTweens, TweenService:Create(barStroke, info, {Transparency = target.stroke}))
+	table.insert(uiTweens, TweenService:Create(iconLabel, info, {TextTransparency = target.icon}))
+
+	for _, t in ipairs(uiTweens) do
+		t:Play()
+	end
+end
 
 local function setStaminaUI(v)
 	v = math.clamp(v, 0, 1)
@@ -334,6 +378,8 @@ RunService.RenderStepped:Connect(function(dt)
 
 	stamina = math.clamp(stamina, 0, 1)
 	setStaminaUI(stamina)
+	local shouldShow = isSprinting or stamina < UI_HIDE_THRESHOLD
+	setSprintUiVisible(shouldShow)
 	if isSprinting ~= lastSentSprint then
 		lastSentSprint = isSprinting
 		sprintEvent:FireServer(isSprinting)
