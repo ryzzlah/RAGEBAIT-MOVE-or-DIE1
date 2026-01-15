@@ -392,6 +392,9 @@ local list = mk(panel, "ScrollingFrame", {
 	BackgroundTransparency=1,
 	BorderSizePixel=0,
 	ScrollBarThickness=6,
+	ScrollingDirection=Enum.ScrollingDirection.Y,
+	ElasticBehavior=Enum.ElasticBehavior.WhenScrollable,
+	VerticalScrollBarInset=Enum.ScrollBarInset.ScrollBar,
 	AutomaticCanvasSize=Enum.AutomaticSize.Y,
 	CanvasSize=UDim2.new(0,0,0,0),
 	ZIndex=21,
@@ -406,7 +409,7 @@ local function addRow(itemName, subText, buttonText, buttonColor, onClick, disab
 		BackgroundColor3=ROW_BG,
 		BorderSizePixel=0,
 		ZIndex=22,
-		Active=true
+		Active=false
 	})
 	mk(row, "UICorner", {CornerRadius=UDim.new(0,12)})
 	mk(row, "UIStroke", {Thickness=1, Color=Color3.fromRGB(45,45,55), Transparency=0})
