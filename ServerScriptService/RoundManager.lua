@@ -396,6 +396,7 @@ local function detachTokenWatcher(plr: Player)
 end
 
 local function eliminate(plr: Player, reason: string?)
+	if plr:GetAttribute("AdminGodMode") == true then return end
 	if isElim(plr) then return end
 	setElim(plr, true)
 	setAliveInRound(plr, false)
