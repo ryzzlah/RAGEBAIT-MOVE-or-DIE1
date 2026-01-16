@@ -56,7 +56,7 @@ local btn = mk(gui, "TextButton", {
 mk(btn, "UICorner", { CornerRadius = UDim.new(0, 14) })
 local stroke = mk(btn, "UIStroke", {
 	Thickness = 2,
-	Color = Color3.fromRGB(235, 65, 65),
+	Color = Color3.fromRGB(85, 200, 120),
 	Transparency = 0,
 })
 
@@ -74,12 +74,12 @@ mk(btn, "UIPadding", {
 })
 
 local ready = true
+local readyOutline = Color3.fromRGB(85, 200, 120)
+local unreadyOutline = Color3.fromRGB(235, 65, 65)
 
 local function refresh()
-	btn.Text = ready and "UNREADY" or "READY"
-	stroke.Color = ready
-		and Color3.fromRGB(235, 65, 65)
-		or Color3.fromRGB(85, 200, 120)
+	btn.Text = ready and "AFK" or "READY"
+	stroke.Color = ready and readyOutline or unreadyOutline
 end
 
 local function push()
