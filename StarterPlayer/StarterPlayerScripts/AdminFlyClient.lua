@@ -21,6 +21,9 @@ local function isFlyAllowed()
 	return player:GetAttribute("AdminFly") == true
 end
 
+local lastMobileJump = 0
+local DOUBLE_JUMP_WINDOW = 1.5
+
 local function attachChar(char: Model)
 	character = char
 	humanoid = char:FindFirstChildOfClass("Humanoid")
@@ -79,6 +82,19 @@ end, false, Enum.KeyCode.F)
 player:GetAttributeChangedSignal("AdminFly"):Connect(function()
 	if not isFlyAllowed() then
 		stopFly()
+	end
+end)
+
+UIS.JumpRequest:Connect(function()
+	if not isFlyAllowed() then return end
+	if not UIS.TouchEnabled or UIS.KeyboardEnabled then return end
+
+	local now = os.clock()
+	if (now - lastMobileJump) <= DOUBLE_JUMP_WINDOW then
+		toggleFly()
+		lastMobileJump = 0
+	else
+		lastMobileJump = now
 	end
 end)
 

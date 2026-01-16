@@ -223,6 +223,7 @@ end
 local playersSection = makeSection("PlayersSection")
 local itemsSection = makeSection("ItemsSection")
 local selfSection = makeSection("SelfSection")
+playersSection.ClipsDescendants = true
 
 local selectedUserId: number? = nil
 local selectedItemId: string? = nil
@@ -315,6 +316,7 @@ local giveCoinsBtn = makeActionButton("Give Coins", 204)
 local deductCoinsBtn = makeActionButton("Deduct Coins", 250)
 local giveFlyBtn = makeActionButton("Toggle Fly", 322)
 local giveGodBtn = makeActionButton("Toggle God", 368)
+local giveAdminBtn = makeActionButton("Toggle Admin", 414)
 
 local minutesBox = mk(actions, "TextBox", {
 	Size=UDim2.new(0,80,0,28),
@@ -360,6 +362,23 @@ local function selectPlayer(p: Player)
 	selectedLabel.Text = "Selected: " .. p.Name
 end
 
+local function isSelfSelected()
+	return selectedUserId == player.UserId
+end
+
+local function setActionButtonsEnabled(enabled)
+	kickBtn.Active = enabled
+	permBanBtn.Active = enabled
+	tempBanBtn.Active = enabled
+	kickBtn.AutoButtonColor = enabled
+	permBanBtn.AutoButtonColor = enabled
+	tempBanBtn.AutoButtonColor = enabled
+end
+
+local function refreshSelfGuard()
+	setActionButtonsEnabled(not isSelfSelected())
+end
+
 local function refreshPlayers()
 	clear(playersList, "TextButton")
 	for _, p in ipairs(Players:GetPlayers()) do
@@ -377,6 +396,7 @@ local function refreshPlayers()
 		mk(b, "UIStroke", {Thickness=1, Color=BTN_STROKE, Transparency=0})
 		b.MouseButton1Click:Connect(function()
 			selectPlayer(p)
+			refreshSelfGuard()
 		end)
 	end
 end
@@ -389,20 +409,104 @@ local function ensureSelected()
 	return selectedUserId ~= nil
 end
 
+local confirm = mk(gui, "Frame", {
+	Name="ConfirmPanel",
+	Size=UDim2.new(0, 320, 0, 140),
+	Position=UDim2.new(0.5, -160, 0.5, -70),
+	BackgroundColor3=Color3.fromRGB(20,20,26),
+	BorderSizePixel=0,
+	Visible=false,
+	ZIndex=200
+})
+mk(confirm, "UICorner", {CornerRadius=UDim.new(0,12)})
+mk(confirm, "UIStroke", {Thickness=1, Color=ACCENT, Transparency=0})
+
+local confirmText = mk(confirm, "TextLabel", {
+	Size=UDim2.new(1,-20,0,60),
+	Position=UDim2.new(0,10,0,10),
+	BackgroundTransparency=1,
+	Text="Are you sure?",
+	TextScaled=true,
+	Font=Enum.Font.GothamBold,
+	TextColor3=Color3.fromRGB(255,255,255),
+	ZIndex=201
+})
+
+local yesBtn = mk(confirm, "TextButton", {
+	Size=UDim2.new(0,120,0,36),
+	Position=UDim2.new(0.5,-130,1,-46),
+	Text="YES",
+	BackgroundColor3=BTN,
+	TextColor3=Color3.fromRGB(255,255,255),
+	TextScaled=true,
+	Font=Enum.Font.GothamBold,
+	AutoButtonColor=true,
+	ZIndex=201
+})
+mk(yesBtn, "UICorner", {CornerRadius=UDim.new(0,10)})
+mk(yesBtn, "UIStroke", {Thickness=1, Color=ACCENT, Transparency=0})
+
+local noBtn = mk(confirm, "TextButton", {
+	Size=UDim2.new(0,120,0,36),
+	Position=UDim2.new(0.5,10,1,-46),
+	Text="NO",
+	BackgroundColor3=BTN_DIM,
+	TextColor3=Color3.fromRGB(255,255,255),
+	TextScaled=true,
+	Font=Enum.Font.GothamBold,
+	AutoButtonColor=true,
+	ZIndex=201
+})
+mk(noBtn, "UICorner", {CornerRadius=UDim.new(0,10)})
+mk(noBtn, "UIStroke", {Thickness=1, Color=BTN_STROKE, Transparency=0})
+
+local pendingConfirm: (() -> ())? = nil
+local function requestConfirm(text, fn)
+	confirmText.Text = text
+	pendingConfirm = fn
+	confirm.Visible = true
+	overlay.Visible = true
+end
+
+noBtn.MouseButton1Click:Connect(function()
+	confirm.Visible = false
+	pendingConfirm = nil
+	if not panel.Visible then
+		overlay.Visible = false
+	end
+end)
+
+yesBtn.MouseButton1Click:Connect(function()
+	if pendingConfirm then
+		pendingConfirm()
+	end
+	confirm.Visible = false
+	pendingConfirm = nil
+	if not panel.Visible then
+		overlay.Visible = false
+	end
+end)
+
 kickBtn.MouseButton1Click:Connect(function()
-	if not ensureSelected() then return end
-	AdminAction:FireServer("Kick", {userId = selectedUserId, reason = reasonBox.Text})
+	if not ensureSelected() or isSelfSelected() then return end
+	requestConfirm("Kick player?", function()
+		AdminAction:FireServer("Kick", {userId = selectedUserId, reason = reasonBox.Text})
+	end)
 end)
 
 permBanBtn.MouseButton1Click:Connect(function()
-	if not ensureSelected() then return end
-	AdminAction:FireServer("PermBan", {userId = selectedUserId, reason = reasonBox.Text})
+	if not ensureSelected() or isSelfSelected() then return end
+	requestConfirm("Perm ban player?", function()
+		AdminAction:FireServer("PermBan", {userId = selectedUserId, reason = reasonBox.Text})
+	end)
 end)
 
 tempBanBtn.MouseButton1Click:Connect(function()
-	if not ensureSelected() then return end
+	if not ensureSelected() or isSelfSelected() then return end
 	local minutes = tonumber(minutesBox.Text) or 1
-	AdminAction:FireServer("TempBan", {userId = selectedUserId, minutes = minutes, reason = reasonBox.Text})
+	requestConfirm(("Temp ban %d min?"):format(minutes), function()
+		AdminAction:FireServer("TempBan", {userId = selectedUserId, minutes = minutes, reason = reasonBox.Text})
+	end)
 end)
 
 giveCoinsBtn.MouseButton1Click:Connect(function()
@@ -429,6 +533,13 @@ giveGodBtn.MouseButton1Click:Connect(function()
 	local target = Players:GetPlayerByUserId(selectedUserId)
 	local enabled = not (target and target:GetAttribute("AdminGodMode") == true)
 	AdminAction:FireServer("SetGod", {userId = selectedUserId, enabled = enabled})
+end)
+
+giveAdminBtn.MouseButton1Click:Connect(function()
+	if not ensureSelected() then return end
+	local target = Players:GetPlayerByUserId(selectedUserId)
+	local enabled = not (target and target:GetAttribute("AdminTemp") == true)
+	AdminAction:FireServer("SetAdmin", {userId = selectedUserId, enabled = enabled})
 end)
 
 -- ===== Items tab =====
@@ -651,6 +762,7 @@ end)
 
 setTab("Players")
 refreshTabStyles("Players")
+refreshSelfGuard()
 
 -- Hide admin button when shop panel is open
 local function hookShopVisibility()

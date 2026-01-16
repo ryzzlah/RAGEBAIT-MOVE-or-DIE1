@@ -31,7 +31,7 @@ if not AdminGetCatalog then
 end
 
 local function isAdmin(plr: Player): boolean
-	return ADMIN_USER_IDS[plr.UserId] == true
+	return ADMIN_USER_IDS[plr.UserId] == true or plr:GetAttribute("AdminTemp") == true
 end
 
 local function getTarget(userId: number): Player?
@@ -237,6 +237,13 @@ AdminAction.OnServerEvent:Connect(function(plr: Player, action: string, payload:
 		local target = getTarget(tonumber(payload.userId) or 0)
 		if not target then return end
 		setAdminSpeed(target, payload.enabled == true, tonumber(payload.speed))
+		return
+	end
+
+	if action == "SetAdmin" then
+		local target = getTarget(tonumber(payload.userId) or 0)
+		if not target then return end
+		target:SetAttribute("AdminTemp", payload.enabled == true)
 		return
 	end
 end)
