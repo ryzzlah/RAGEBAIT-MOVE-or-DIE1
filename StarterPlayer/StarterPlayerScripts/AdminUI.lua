@@ -70,13 +70,13 @@ mk(btn, "UICorner", {CornerRadius=UDim.new(0,10)})
 mk(btn, "UIStroke", {Thickness=1, Color=ACCENT, Transparency=0})
 
 local function isMobile()
-	return UserInputService.TouchEnabled and not UserInputService.KeyboardEnabled
+	return UserInputService.TouchEnabled
 end
 
 local function positionAdminButton()
 	if isMobile() then
-		btn.AnchorPoint = Vector2.new(0.5, 1)
-		btn.Position = UDim2.new(0.5, 0, 1, -90)
+		btn.AnchorPoint = Vector2.new(0, 1)
+		btn.Position = UDim2.new(0, 20, 1, -90)
 	else
 		btn.AnchorPoint = Vector2.new(0, 0)
 		btn.Position = UDim2.new(0, 20, 0.5, -78)
@@ -84,6 +84,9 @@ local function positionAdminButton()
 end
 
 positionAdminButton()
+UserInputService:GetPropertyChangedSignal("TouchEnabled"):Connect(positionAdminButton)
+UserInputService:GetPropertyChangedSignal("KeyboardEnabled"):Connect(positionAdminButton)
+task.defer(positionAdminButton)
 
 local overlay = mk(gui, "TextButton", {
 	Name="Overlay",
@@ -274,12 +277,18 @@ local playersList = mk(playersSection, "ScrollingFrame", {
 })
 mk(playersList, "UIListLayout", {Padding=UDim.new(0,6), SortOrder=Enum.SortOrder.LayoutOrder})
 
-local actions = mk(playersSection, "Frame", {
+local actions = mk(playersSection, "ScrollingFrame", {
 	Size=UDim2.new(1,-280,1,0),
 	Position=UDim2.new(0,280,0,0),
 	BackgroundTransparency=1,
 	ZIndex=102,
+	BorderSizePixel=0,
+	ScrollBarThickness=6,
+	AutomaticCanvasSize=Enum.AutomaticSize.Y,
+	CanvasSize=UDim2.new(0,0,0,0),
+	Active=true,
 })
+mk(actions, "UIListLayout", {Padding=UDim.new(0,6), SortOrder=Enum.SortOrder.LayoutOrder})
 
 local selectedLabel = mk(actions, "TextLabel", {
 	Size=UDim2.new(1,0,0,28),
@@ -294,8 +303,8 @@ local selectedLabel = mk(actions, "TextLabel", {
 
 local function makeActionButton(text, y)
 	local b = mk(actions, "TextButton", {
-		Size=UDim2.new(0,170,0,36),
-		Position=UDim2.new(0,0,0,y),
+		Size=UDim2.new(0,200,0,36),
+		Position=UDim2.new(0,0,0,0),
 		Text=text,
 		BackgroundColor3=BTN,
 		TextColor3=Color3.fromRGB(255,255,255),
@@ -309,18 +318,19 @@ local function makeActionButton(text, y)
 	return b
 end
 
-local kickBtn = makeActionButton("Kick", 40)
-local permBanBtn = makeActionButton("Perm Ban", 86)
-local tempBanBtn = makeActionButton("Temp Ban", 132)
-local giveCoinsBtn = makeActionButton("Give Coins", 204)
-local deductCoinsBtn = makeActionButton("Deduct Coins", 250)
-local giveFlyBtn = makeActionButton("Toggle Fly", 322)
-local giveGodBtn = makeActionButton("Toggle God", 368)
-local giveAdminBtn = makeActionButton("Toggle Admin", 414)
+local kickBtn = makeActionButton("Kick", 0)
+local permBanBtn = makeActionButton("Perm Ban", 0)
+local tempBanBtn = makeActionButton("Temp Ban", 0)
+local giveCoinsBtn = makeActionButton("Give Coins", 0)
+local deductCoinsBtn = makeActionButton("Deduct Coins", 0)
+local giveSpeedBtn = makeActionButton("Set Speed", 0)
+local giveFlyBtn = makeActionButton("Toggle Fly", 0)
+local giveGodBtn = makeActionButton("Toggle God", 0)
+local giveAdminBtn = makeActionButton("Toggle Admin", 0)
 
 local minutesBox = mk(actions, "TextBox", {
-	Size=UDim2.new(0,80,0,28),
-	Position=UDim2.new(0,180,0,138),
+	Size=UDim2.new(0,200,0,28),
+	Position=UDim2.new(0,0,0,0),
 	PlaceholderText="min",
 	Text="",
 	BackgroundColor3=BTN_DIM,
@@ -332,8 +342,8 @@ local minutesBox = mk(actions, "TextBox", {
 mk(minutesBox, "UICorner", {CornerRadius=UDim.new(0,6)})
 
 local coinsBox = mk(actions, "TextBox", {
-	Size=UDim2.new(0,80,0,28),
-	Position=UDim2.new(0,180,0,210),
+	Size=UDim2.new(0,200,0,28),
+	Position=UDim2.new(0,0,0,0),
 	PlaceholderText="amt",
 	Text="",
 	BackgroundColor3=BTN_DIM,
@@ -345,8 +355,8 @@ local coinsBox = mk(actions, "TextBox", {
 mk(coinsBox, "UICorner", {CornerRadius=UDim.new(0,6)})
 
 local reasonBox = mk(actions, "TextBox", {
-	Size=UDim2.new(1,-200,0,28),
-	Position=UDim2.new(0,180,0,92),
+	Size=UDim2.new(0,260,0,28),
+	Position=UDim2.new(0,0,0,0),
 	PlaceholderText="reason (optional)",
 	Text="",
 	BackgroundColor3=BTN_DIM,
@@ -356,6 +366,20 @@ local reasonBox = mk(actions, "TextBox", {
 	ZIndex=103,
 })
 mk(reasonBox, "UICorner", {CornerRadius=UDim.new(0,6)})
+
+local speedBox = mk(actions, "TextBox", {
+	Size=UDim2.new(0,200,0,28),
+	Position=UDim2.new(0,0,0,0),
+	PlaceholderText="speed",
+	Text="",
+	BackgroundColor3=BTN_DIM,
+	TextColor3=Color3.fromRGB(255,255,255),
+	Font=Enum.Font.GothamBold,
+	TextScaled=true,
+	ZIndex=103,
+})
+mk(speedBox, "UICorner", {CornerRadius=UDim.new(0,6)})
+speedBox.Text = "32"
 
 local function selectPlayer(p: Player)
 	selectedUserId = p.UserId
@@ -519,6 +543,12 @@ deductCoinsBtn.MouseButton1Click:Connect(function()
 	if not ensureSelected() then return end
 	local amount = tonumber(coinsBox.Text) or 0
 	AdminAction:FireServer("DeductCoins", {userId = selectedUserId, amount = amount})
+end)
+
+giveSpeedBtn.MouseButton1Click:Connect(function()
+	if not ensureSelected() then return end
+	local speed = tonumber(speedBox.Text) or 32
+	AdminAction:FireServer("SetSpeed", {userId = selectedUserId, enabled = true, speed = speed})
 end)
 
 giveFlyBtn.MouseButton1Click:Connect(function()

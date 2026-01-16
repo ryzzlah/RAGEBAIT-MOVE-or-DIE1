@@ -23,6 +23,8 @@ end
 
 local lastMobileJump = 0
 local DOUBLE_JUMP_WINDOW = 1.5
+local jumpBoostUntil = 0
+local JUMP_BOOST_TIME = 0.35
 
 local function attachChar(char: Model)
 	character = char
@@ -96,6 +98,10 @@ UIS.JumpRequest:Connect(function()
 	else
 		lastMobileJump = now
 	end
+
+	if flyActive then
+		jumpBoostUntil = now + JUMP_BOOST_TIME
+	end
 end)
 
 RunService.RenderStepped:Connect(function()
@@ -104,12 +110,19 @@ RunService.RenderStepped:Connect(function()
 	if not cam then return end
 
 	local move = Vector3.zero
-	if UIS:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
-	if UIS:IsKeyDown(Enum.KeyCode.S) then move -= cam.CFrame.LookVector end
-	if UIS:IsKeyDown(Enum.KeyCode.D) then move += cam.CFrame.RightVector end
-	if UIS:IsKeyDown(Enum.KeyCode.A) then move -= cam.CFrame.RightVector end
-	if UIS:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
-	if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then move -= Vector3.new(0, 1, 0) end
+	if UIS.TouchEnabled and not UIS.KeyboardEnabled then
+		move = humanoid.MoveDirection
+		if os.clock() < jumpBoostUntil then
+			move += Vector3.new(0, 1, 0)
+		end
+	else
+		if UIS:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
+		if UIS:IsKeyDown(Enum.KeyCode.S) then move -= cam.CFrame.LookVector end
+		if UIS:IsKeyDown(Enum.KeyCode.D) then move += cam.CFrame.RightVector end
+		if UIS:IsKeyDown(Enum.KeyCode.A) then move -= cam.CFrame.RightVector end
+		if UIS:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0, 1, 0) end
+		if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then move -= Vector3.new(0, 1, 0) end
+	end
 
 	if move.Magnitude > 0 then
 		move = move.Unit * FLY_SPEED
