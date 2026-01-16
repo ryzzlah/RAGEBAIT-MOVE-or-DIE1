@@ -23,6 +23,7 @@ local GAMEPASS = {
 	VIP        = 1234567890,
 	EXTRA_LIFE = 1652150771,
 	TRAIL_PACK = 1651928187,
+	GRAVITY_COIL = 1673146257,
 }
 
 local PRODUCT = {
@@ -540,6 +541,19 @@ local COIN_CATEGORIES = {
 		}
 	},
 	{
+		id = "Items",
+		ownedCategory = "RobuxItems",
+		items = {
+			{
+				itemId="RbxItems_GCoil",
+				name="Gravity Coil",
+				desc="Robux item",
+				price="8 R$",
+				buy=function() MarketplaceService:PromptGamePassPurchase(player, GAMEPASS.GRAVITY_COIL) end
+			},
+		}
+	},
+	{
 		id = "Troll Items",
 		ownedCategory = "TrollItems",
 		items = {
@@ -571,6 +585,7 @@ end
 local robuxItems = {
 	{ kind="GamePass", id=GAMEPASS.EXTRA_LIFE, name="Extra Life",           desc="Permanent 1 revive per game forever" },
 	{ kind="GamePass", id=GAMEPASS.TRAIL_PACK, name="Exclusive Trail Pack", desc="Unlock 5 limited edition trails" },
+	{ kind="GamePass", id=GAMEPASS.GRAVITY_COIL, name="Gravity Coil",       desc="Equipable gravity coil (pass item)" },
 	{ kind="Product",  id=PRODUCT.REVIVE,      name="Small Revive",         desc="Revive once after dying (one match)" },
 }
 

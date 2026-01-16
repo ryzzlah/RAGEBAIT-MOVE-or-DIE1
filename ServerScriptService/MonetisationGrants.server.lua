@@ -15,10 +15,13 @@ local MarketplaceService = game:GetService("MarketplaceService")
 -- =========================
 local TRAIL_PACK_PASS_ID   = 1651928187
 local EXTRA_LIFE_PASS_ID   = 1652150771
+local GRAVITY_COIL_PASS_ID = 1673146257
 local SMALL_REVIVE_PRODUCT = 3498314947
 
 -- Folder holding premium trails
 local PREMIUM_FOLDER_NAME = "Robux_Trails"
+local ROBUX_ITEMS_CATEGORY = "RobuxItems"
+local GRAVITY_COIL_ITEM_ID = "RbxItems_GCoil"
 
 -- Optional PlayerData (safe)
 local PlayerData
@@ -94,9 +97,11 @@ end
 local function syncPassFlags(plr: Player)
 	local hasTrailPack = ownsPass(plr, TRAIL_PACK_PASS_ID)
 	local hasExtraLife = ownsPass(plr, EXTRA_LIFE_PASS_ID)
+	local hasGravityCoil = ownsPass(plr, GRAVITY_COIL_PASS_ID)
 
 	plr:SetAttribute("HasTrailPackPass", hasTrailPack)
 	plr:SetAttribute("HasExtraLifePass", hasExtraLife)
+	plr:SetAttribute("HasGravityCoilPass", hasGravityCoil)
 
 	if hasTrailPack then
 		grantTrailPack(plr)
@@ -104,6 +109,11 @@ local function syncPassFlags(plr: Player)
 
 	if hasExtraLife then
 		safePrint(("Extra Life pass detected for %s"):format(plr.Name))
+	end
+
+	if hasGravityCoil then
+		safeSetOwned(plr, ROBUX_ITEMS_CATEGORY, GRAVITY_COIL_ITEM_ID)
+		safePrint(("Gravity Coil pass detected for %s"):format(plr.Name))
 	end
 end
 
@@ -145,6 +155,13 @@ MarketplaceService.PromptGamePassPurchaseFinished:Connect(function(plr, passId, 
 		safePrint(("Extra Life purchased by %s"):format(plr.Name))
 		-- if they're currently dead in-match, tell client to refresh UI
 		reviveRemote:FireClient(plr, "Refresh")
+		return
+	end
+
+	if passId == GRAVITY_COIL_PASS_ID then
+		plr:SetAttribute("HasGravityCoilPass", true)
+		safeSetOwned(plr, ROBUX_ITEMS_CATEGORY, GRAVITY_COIL_ITEM_ID)
+		safePrint(("Gravity Coil purchased by %s"):format(plr.Name))
 		return
 	end
 end)

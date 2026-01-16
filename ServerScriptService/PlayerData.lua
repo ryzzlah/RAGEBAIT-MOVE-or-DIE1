@@ -23,6 +23,7 @@ local DEFAULT_PROFILE = {
 		WinAnims = {},
 		DeathAnims = {},
 		TrollItems = {},
+		RobuxItems = {},
 		Skills = {},
 	},
 	Equipped = {
@@ -30,6 +31,7 @@ local DEFAULT_PROFILE = {
 		WinAnim = nil,
 		DeathAnim = nil,
 		TrollItem = nil,
+		RobuxItem = nil,
 		Skill = nil,
 	}
 }
@@ -39,6 +41,7 @@ local CATEGORY_ALIASES = {
 	["Troll Items"] = "TrollItems",
 	["Win Emotes"] = "WinAnims",
 	["Fall Animations"] = "DeathAnims",
+	["Robux Items"] = "RobuxItems",
 }
 
 local function deepCopy(t)

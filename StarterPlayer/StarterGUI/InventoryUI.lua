@@ -129,6 +129,14 @@ local INVENTORY_CATEGORIES = {
 		items = {}, -- filled after we fetch premium ids
 	},
 	{
+		id = "Items",
+		category = "RobuxItems",
+		slot = "RobuxItem",
+		items = {
+			{ itemId="RbxItems_GCoil", name="Gravity Coil", desc="Robux item" },
+		}
+	},
+	{
 		id = "Troll Items",
 		category = "TrollItems",
 		slot = "TrollItem",

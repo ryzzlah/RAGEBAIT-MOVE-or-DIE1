@@ -32,6 +32,7 @@ end
 
 -- Roots
 local TOOLS_ROOT = ServerStorage:WaitForChild("TrollItems")
+local ROBUX_ITEMS_ROOT = ServerStorage:WaitForChild("Robux_Items")
 
 -- Put your actual folder names here.
 -- From your screenshot you have: "Trails" and "Robux_Trails"
@@ -137,6 +138,44 @@ local function giveTool(plr: Player, itemId: string): boolean
 	return true
 end
 
+local function removeExistingRobuxTools(plr: Player)
+	local backpack = plr:FindFirstChildOfClass("Backpack")
+	if backpack then
+		for _, t in ipairs(backpack:GetChildren()) do
+			if t:IsA("Tool") and ROBUX_ITEMS_ROOT:FindFirstChild(t.Name) then
+				t:Destroy()
+			end
+		end
+	end
+
+	local char = plr.Character
+	if char then
+		for _, t in ipairs(char:GetChildren()) do
+			if t:IsA("Tool") and ROBUX_ITEMS_ROOT:FindFirstChild(t.Name) then
+				t:Destroy()
+			end
+		end
+	end
+end
+
+local function giveRobuxTool(plr: Player, itemId: string): boolean
+	local template = ROBUX_ITEMS_ROOT:FindFirstChild(itemId)
+	if not template or not template:IsA("Tool") then
+		warn("[InventoryService] Missing Robux Tool template:", itemId, "in ServerStorage/Robux_Items")
+		return false
+	end
+
+	local backpack = plr:FindFirstChildOfClass("Backpack")
+	if not backpack then
+		warn("[InventoryService] No Backpack for", plr.Name)
+		return false
+	end
+
+	removeExistingRobuxTools(plr)
+	template:Clone().Parent = backpack
+	return true
+end
+
 -- ========= Trails =========
 local function removeExistingTrail(char: Model)
 	for _, obj in ipairs(char:GetChildren()) do
@@ -230,6 +269,24 @@ EquipItem.OnServerEvent:Connect(function(plr: Player, category: string, itemId: 
 		return
 	end
 
+	-- Robux Items
+	if category == "RobuxItems" then
+		if not isOwned(plr, "RobuxItems", itemId) then
+			warn("[InventoryService] Tried to equip unowned RobuxItem:", plr.Name, itemId)
+			return
+		end
+
+		if equip then
+			if setEquipped(plr, "RobuxItem", itemId) then
+				giveRobuxTool(plr, itemId)
+			end
+		else
+			setEquipped(plr, "RobuxItem", nil)
+			removeExistingRobuxTools(plr)
+		end
+		return
+	end
+
 	-- Trails
 	if category == "Trails" then
 		if not isOwned(plr, "Trails", itemId) then
@@ -267,6 +324,11 @@ local function reapplyFor(plr: Player)
 	local tr = profile.Equipped.Trail
 	if type(tr) == "string" and tr ~= "" then
 		equipBackTrail(plr, tr)
+	end
+
+	local rb = profile.Equipped.RobuxItem
+	if type(rb) == "string" and rb ~= "" then
+		giveRobuxTool(plr, rb)
 	end
 end
 
