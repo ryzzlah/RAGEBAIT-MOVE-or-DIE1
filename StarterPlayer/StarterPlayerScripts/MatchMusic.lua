@@ -23,11 +23,34 @@ end
 
 local inMatch = false
 
+local function getPlayerFromSubject(subject: Instance?)
+	if not subject then return nil end
+	if subject:IsA("Humanoid") then
+		return Players:GetPlayerFromCharacter(subject.Parent)
+	end
+	if subject:IsA("BasePart") then
+		return Players:GetPlayerFromCharacter(subject.Parent)
+	end
+	return nil
+end
+
+local function isSpectatingAliveTarget()
+	local cam = workspace.CurrentCamera
+	if not cam then return false end
+	local target = getPlayerFromSubject(cam.CameraSubject)
+	if not target then return false end
+	if target == player then return false end
+	return target:GetAttribute("InRound") == true and target:GetAttribute("AliveInRound") == true
+end
+
 local function shouldPlay()
 	if not inMatch then return false end
 	local participant = player:GetAttribute("MatchParticipant") == true
-	local inRound = player:GetAttribute("InRound") == true
-	return participant or inRound
+	local alive = player:GetAttribute("AliveInRound") == true
+	if participant and alive then
+		return true
+	end
+	return isSpectatingAliveTarget()
 end
 
 local function refresh()
@@ -49,5 +72,20 @@ end)
 
 player:GetAttributeChangedSignal("MatchParticipant"):Connect(refresh)
 player:GetAttributeChangedSignal("InRound"):Connect(refresh)
+player:GetAttributeChangedSignal("AliveInRound"):Connect(refresh)
+
+workspace:GetPropertyChangedSignal("CurrentCamera"):Connect(refresh)
+if workspace.CurrentCamera then
+	workspace.CurrentCamera:GetPropertyChangedSignal("CameraSubject"):Connect(refresh)
+end
+
+task.spawn(function()
+	while sound.Parent do
+		if inMatch then
+			refresh()
+		end
+		task.wait(0.5)
+	end
+end)
 
 refresh()
