@@ -216,6 +216,8 @@ local MATCH_RUNNING = false
 local REVIVE_USED_PASS: {[Player]: boolean} = {}
 local REVIVE_PENDING: {[Player]: boolean} = {}
 local TOKEN_WATCH_CONN: {[Player]: RBXScriptConnection} = {}
+local DEATH_CHAR_CONN: {[Player]: RBXScriptConnection} = {}
+local DEATH_HUM_CONN: {[Player]: RBXScriptConnection} = {}
 
 local intensity = 0
 local intensityBase = 0
@@ -392,6 +394,45 @@ local function detachTokenWatcher(plr: Player)
 	if TOKEN_WATCH_CONN[plr] then
 		TOKEN_WATCH_CONN[plr]:Disconnect()
 		TOKEN_WATCH_CONN[plr] = nil
+	end
+end
+
+local function clearDeathWatcher(plr: Player)
+	if DEATH_HUM_CONN[plr] then
+		DEATH_HUM_CONN[plr]:Disconnect()
+		DEATH_HUM_CONN[plr] = nil
+	end
+	if DEATH_CHAR_CONN[plr] then
+		DEATH_CHAR_CONN[plr]:Disconnect()
+		DEATH_CHAR_CONN[plr] = nil
+	end
+end
+
+local function hookDeathFor(plr: Player, hum: Humanoid?)
+	if DEATH_HUM_CONN[plr] then
+		DEATH_HUM_CONN[plr]:Disconnect()
+		DEATH_HUM_CONN[plr] = nil
+	end
+	if not hum then return end
+
+	DEATH_HUM_CONN[plr] = hum.Died:Connect(function()
+		if not MATCH_RUNNING then return end
+		if plr:GetAttribute("InRound") ~= true then return end
+		if plr:GetAttribute("AliveInRound") ~= true then return end
+		eliminate(plr, "died!")
+	end)
+end
+
+local function attachDeathWatcher(plr: Player)
+	clearDeathWatcher(plr)
+	DEATH_CHAR_CONN[plr] = plr.CharacterAdded:Connect(function(char)
+		local hum = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 5)
+		hookDeathFor(plr, hum)
+	end)
+
+	if plr.Character then
+		local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+		hookDeathFor(plr, hum)
 	end
 end
 
@@ -718,6 +759,7 @@ while true do
 		REVIVE_PENDING[plr] = nil
 		REVIVE_USED_PASS[plr] = nil
 		detachTokenWatcher(plr)
+		clearDeathWatcher(plr)
 
 		if not plr.Character then plr:LoadCharacter() end
 		task.wait(0.02)
@@ -757,12 +799,14 @@ while true do
 		REVIVE_USED_PASS[plr] = nil
 		REVIVE_PENDING[plr] = nil
 		detachTokenWatcher(plr)
+		clearDeathWatcher(plr)
 
 		if not plr.Character then plr:LoadCharacter() end
 		setElim(plr, false)
 		setInRound(plr, true)
 		setAliveInRound(plr, true)
 		setMatchParticipant(plr, true)
+		attachDeathWatcher(plr)
 
 		task.wait(0.03)
 		teleportToArena(plr)
@@ -1008,6 +1052,7 @@ while true do
 		REVIVE_PENDING[plr] = nil
 		REVIVE_USED_PASS[plr] = nil
 		detachTokenWatcher(plr)
+		clearDeathWatcher(plr)
 
 		setElim(plr, true)
 		setInRound(plr, false)
