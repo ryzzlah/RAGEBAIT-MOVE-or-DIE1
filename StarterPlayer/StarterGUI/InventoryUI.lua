@@ -237,8 +237,8 @@ local function showToast(msg, isBad)
 end
 
 -- ===== Match state hide =====
-matchState.OnClientEvent:Connect(function(inMatch)
-	inMatch = (inMatch == true)
+matchState.OnClientEvent:Connect(function(v)
+	inMatch = (v == true)
 	local participant = player:GetAttribute("MatchParticipant") == true
 	guiButtons.Enabled = (not inMatch) or (not participant)
 	guiPanel.Enabled = (not inMatch) or (not participant)
