@@ -54,6 +54,39 @@ local frame = mk(gui, "Frame", {
 mk(frame, "UICorner", { CornerRadius = UDim.new(0, 12) })
 mk(frame, "UIStroke", { Thickness = 1, Color = Color3.fromRGB(60, 60, 60), Transparency = 0 })
 
+local function positionBelowInventory()
+	local invGui = playerGui:FindFirstChild("InventoryButtonsGui")
+	local invBtn = invGui and invGui:FindFirstChild("InventoryButton")
+	if invBtn and invBtn:IsA("TextButton") then
+		frame.AnchorPoint = Vector2.new(0, 0)
+		frame.Position = UDim2.new(
+			0,
+			invBtn.AbsolutePosition.X,
+			0,
+			invBtn.AbsolutePosition.Y + invBtn.AbsoluteSize.Y + 8
+		)
+		return true
+	end
+	return false
+end
+
+local function refreshPosition()
+	if positionBelowInventory() then
+		return
+	end
+	frame.AnchorPoint = Vector2.new(0, 1)
+	frame.Position = isMobile and MOBILE_POS or PC_POS
+end
+
+refreshPosition()
+playerGui.ChildAdded:Connect(function()
+	task.defer(refreshPosition)
+end)
+UserInputService:GetPropertyChangedSignal("TouchEnabled"):Connect(refreshPosition)
+UserInputService:GetPropertyChangedSignal("KeyboardEnabled"):Connect(refreshPosition)
+task.defer(refreshPosition)
+task.delay(1, refreshPosition)
+
 local label = mk(frame, "TextLabel", {
 	Size = UDim2.new(1, -16, 1, 0),
 	Position = UDim2.new(0, 8, 0, 0),
