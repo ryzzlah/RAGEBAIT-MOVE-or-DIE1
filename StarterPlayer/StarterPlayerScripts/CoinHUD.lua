@@ -71,8 +71,10 @@ local function positionBelowInventory()
 end
 
 local function refreshPosition()
-	if positionBelowInventory() then
-		return
+	if isMobile then
+		if positionBelowInventory() then
+			return
+		end
 	end
 	frame.AnchorPoint = Vector2.new(0, 1)
 	frame.Position = isMobile and MOBILE_POS or PC_POS
