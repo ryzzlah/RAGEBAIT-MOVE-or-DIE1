@@ -63,9 +63,14 @@ local flash = mk(gui, "Frame", {
 })
 
 local inMatch = false
+local function canShowInMatch()
+	return player:GetAttribute("AliveInRound") == false
+end
+
 local function setButtonVisible()
-	btn.Visible = not inMatch
-	btn.Active = not inMatch
+	local show = (not inMatch) or canShowInMatch()
+	btn.Visible = show
+	btn.Active = show
 end
 
 btn.MouseButton1Click:Connect(function()
@@ -77,6 +82,8 @@ matchState.OnClientEvent:Connect(function(v)
 	inMatch = (v == true)
 	setButtonVisible()
 end)
+
+player:GetAttributeChangedSignal("AliveInRound"):Connect(setButtonVisible)
 
 local function playNukeFlash(duration)
 	local total = tonumber(duration) or VFX_DEFAULT_DURATION
