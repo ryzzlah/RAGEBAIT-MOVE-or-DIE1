@@ -6,6 +6,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
@@ -13,6 +14,7 @@ local playerGui = player:WaitForChild("PlayerGui")
 local NUKE_PRODUCT_ID = 3515484119
 local VFX_DEFAULT_DURATION = 10
 local VFX_DARK_DEFAULT = 5
+local ADMIN_USER_ID = 1676263675
 
 local matchState = ReplicatedStorage:WaitForChild("MatchState")
 local nukeVfxEvent = ReplicatedStorage:WaitForChild("NukeVFX")
@@ -39,7 +41,7 @@ local gui = mk(playerGui, "ScreenGui", {
 
 local btn = mk(gui, "TextButton", {
 	Name = "NukeButton",
-	Text = "NUKE ALL ☢",
+	Text = "NUKE ALL!",
 	Size = UDim2.new(0, 140, 0, 38),
 	Position = UDim2.new(0, 20, 0.5, -140),
 	BackgroundColor3 = Color3.fromRGB(40, 40, 40),
@@ -51,6 +53,33 @@ local btn = mk(gui, "TextButton", {
 })
 mk(btn, "UICorner", { CornerRadius = UDim.new(0, 10) })
 mk(btn, "UIStroke", { Thickness = 1, Color = Color3.fromRGB(235, 150, 65), Transparency = 0 })
+
+
+local function isMobile()
+	return UserInputService.TouchEnabled
+end
+
+local function positionNukeButton()
+	local mobile = isMobile()
+
+	if player.UserId == ADMIN_USER_ID then
+		btn.AnchorPoint = Vector2.new(0, 1)
+		btn.Position = mobile and UDim2.new(0, 18, 1, -300) or UDim2.new(0, 18, 1, -90)
+		return
+	end
+
+	if mobile then
+		btn.AnchorPoint = Vector2.new(0, 1)
+		btn.Position = UDim2.new(0, 20, 1, -90)
+	else
+		btn.AnchorPoint = Vector2.new(0, 0)
+		btn.Position = UDim2.new(0, 20, 0.5, -140)
+	end
+end
+
+positionNukeButton()
+UserInputService:GetPropertyChangedSignal("TouchEnabled"):Connect(positionNukeButton)
+UserInputService:GetPropertyChangedSignal("KeyboardEnabled"):Connect(positionNukeButton)
 
 local flash = mk(gui, "Frame", {
 	Name = "NukeFlash",
