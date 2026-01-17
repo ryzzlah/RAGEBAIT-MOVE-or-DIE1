@@ -418,13 +418,23 @@ local function getWinnerStatueModule(model: Model?)
 
 	local named = model:FindFirstChild("PlayAnimationInRig", true)
 	if named and named:IsA("ModuleScript") then
-		winnerStatueModule = require(named)
+		local ok, mod = pcall(require, named)
+		if ok then
+			winnerStatueModule = mod
+		else
+			warn("[RoundManager] Failed to require PlayAnimationInRig:", mod)
+		end
 		return winnerStatueModule
 	end
 
 	for _, d in ipairs(model:GetDescendants()) do
 		if d:IsA("ModuleScript") then
-			winnerStatueModule = require(d)
+			local ok, mod = pcall(require, d)
+			if ok then
+				winnerStatueModule = mod
+			else
+				warn("[RoundManager] Failed to require module in ArenaStatue:", mod)
+			end
 			return winnerStatueModule
 		end
 	end
@@ -486,13 +496,17 @@ local function showWinnerStatue(winner: Player?)
 	local model = getWinnerStatue()
 	if not model or not winner then return end
 
-	local mod = getWinnerStatueModule(model)
-	if mod and mod.SetRigHumanoidDescription then
-		mod.SetRigHumanoidDescription(winner.UserId)
+	local ok, err = pcall(function()
+		local mod = getWinnerStatueModule(model)
+		if mod and mod.SetRigHumanoidDescription then
+			mod.SetRigHumanoidDescription(winner.UserId)
+		end
+		cacheStatueState(model)
+		setStatueVisible(model, true)
+	end)
+	if not ok then
+		warn("[RoundManager] Winner statue failed:", err)
 	end
-
-	cacheStatueState(model)
-	setStatueVisible(model, true)
 end
 
 local function clearDeathWatcher(plr: Player)
