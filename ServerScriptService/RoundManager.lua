@@ -219,6 +219,13 @@ local TOKEN_WATCH_CONN: {[Player]: RBXScriptConnection} = {}
 local DEATH_CHAR_CONN: {[Player]: RBXScriptConnection} = {}
 local DEATH_HUM_CONN: {[Player]: RBXScriptConnection} = {}
 
+local WINNER_STATUE_NAME = "ArenaStatue"
+local WINNER_STATUE_DURATION = 8
+local winnerStatue: Model? = nil
+local winnerStatueModule = nil
+local winnerStatueState = nil
+local statueToken = 0
+
 local intensity = 0
 local intensityBase = 0
 local intensityResetAt = 0
@@ -395,6 +402,98 @@ local function detachTokenWatcher(plr: Player)
 		TOKEN_WATCH_CONN[plr]:Disconnect()
 		TOKEN_WATCH_CONN[plr] = nil
 	end
+end
+
+local function getWinnerStatue(): Model?
+	if winnerStatue and winnerStatue.Parent then return winnerStatue end
+	local m = workspace:FindFirstChild(WINNER_STATUE_NAME)
+	if m and m:IsA("Model") then
+		winnerStatue = m
+		return winnerStatue
+	end
+	return nil
+end
+
+local function getWinnerStatueModule(model: Model?)
+	if winnerStatueModule then return winnerStatueModule end
+	if not model then return nil end
+
+	local named = model:FindFirstChild("PlayAnimationInRig", true)
+	if named and named:IsA("ModuleScript") then
+		winnerStatueModule = require(named)
+		return winnerStatueModule
+	end
+
+	for _, d in ipairs(model:GetDescendants()) do
+		if d:IsA("ModuleScript") then
+			winnerStatueModule = require(d)
+			return winnerStatueModule
+		end
+	end
+
+	return nil
+end
+
+local function cacheStatueState(model: Model)
+	winnerStatueState = { transparency = {}, enabled = {} }
+	for _, inst in ipairs(model:GetDescendants()) do
+		if inst:IsA("BasePart") or inst:IsA("Decal") or inst:IsA("Texture") then
+			winnerStatueState.transparency[inst] = inst.Transparency
+		elseif inst:IsA("BillboardGui") or inst:IsA("SurfaceGui")
+			or inst:IsA("ParticleEmitter") or inst:IsA("Trail") or inst:IsA("Beam") then
+			winnerStatueState.enabled[inst] = inst.Enabled
+		end
+	end
+end
+
+local function setStatueVisible(model: Model?, visible: boolean)
+	if not model then return end
+
+	if visible then
+		if not winnerStatueState then
+			cacheStatueState(model)
+		end
+		for inst, v in pairs(winnerStatueState.transparency) do
+			if inst.Parent then
+				inst.Transparency = v
+			end
+		end
+		for inst, v in pairs(winnerStatueState.enabled) do
+			if inst.Parent then
+				inst.Enabled = v
+			end
+		end
+		return
+	end
+
+	for _, inst in ipairs(model:GetDescendants()) do
+		if inst:IsA("BasePart") or inst:IsA("Decal") or inst:IsA("Texture") then
+			inst.Transparency = 1
+		elseif inst:IsA("BillboardGui") or inst:IsA("SurfaceGui")
+			or inst:IsA("ParticleEmitter") or inst:IsA("Trail") or inst:IsA("Beam") then
+			inst.Enabled = false
+		end
+	end
+end
+
+local function showWinnerStatue(winner: Player?)
+	local model = getWinnerStatue()
+	if not model or not winner then return end
+
+	local mod = getWinnerStatueModule(model)
+	if mod and mod.SetRigHumanoidDescription then
+		mod.SetRigHumanoidDescription(winner.UserId)
+	end
+
+	cacheStatueState(model)
+	setStatueVisible(model, true)
+
+	statueToken += 1
+	local myToken = statueToken
+	task.delay(WINNER_STATUE_DURATION, function()
+		if statueToken ~= myToken then return end
+		setStatueVisible(model, false)
+	end)
 end
 
 local function clearDeathWatcher(plr: Player)
@@ -782,6 +881,8 @@ while true do
 		continue
 	end
 
+	setStatueVisible(getWinnerStatue(), false)
+
 	CURRENT_MATCH_PLAYERS = matchPlayers
 	MATCH_RUNNING = true
 	matchState:FireAllClients(true)
@@ -1029,6 +1130,7 @@ while true do
 	else
 		broadcast("No winner.")
 	end
+	local winnerForStatue = alive[1] or (LAST_STANDING and LAST_STANDING.Parent == Players and LAST_STANDING) or nil
 
 	-- ===== END MATCH =====
 	MATCH_RUNNING = false
@@ -1062,6 +1164,8 @@ while true do
 		reviveRemote:FireClient(plr, "Hide")
 		teleportToLobby(plr)
 	end
+
+	showWinnerStatue(winnerForStatue)
 
 	-- reset spectators after match ends
 	for _, plr in ipairs(Players:GetPlayers()) do
