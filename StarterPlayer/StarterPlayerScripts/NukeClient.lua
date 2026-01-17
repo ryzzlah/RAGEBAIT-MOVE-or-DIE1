@@ -68,13 +68,8 @@ local function positionNukeButton()
 		return
 	end
 
-	if mobile then
-		btn.AnchorPoint = Vector2.new(0, 1)
-		btn.Position = UDim2.new(0, 20, 1, -90)
-	else
-		btn.AnchorPoint = Vector2.new(0, 0)
-		btn.Position = UDim2.new(0, 20, 0.5, -140)
-	end
+	btn.AnchorPoint = Vector2.new(0.5, 0)
+	btn.Position = UDim2.new(0.5, 0, 0, 86)
 end
 
 positionNukeButton()
