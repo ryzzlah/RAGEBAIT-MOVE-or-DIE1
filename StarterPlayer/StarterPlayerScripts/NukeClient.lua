@@ -69,7 +69,7 @@ local function positionNukeButton()
 	end
 
 	btn.AnchorPoint = Vector2.new(0.5, 0)
-	btn.Position = UDim2.new(0.5, 0, 0, 86)
+	btn.Position = UDim2.new(0.5, 0, 0, 110)
 end
 
 positionNukeButton()
