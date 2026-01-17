@@ -29,6 +29,7 @@ local PRODUCT = {
 	REVIVE     = 3498314947,
 	COIN_BOOST = 1234567901,
 	CHAOS      = 1234567902,
+	NUKE_ALL   = 3515484119,
 }
 
 -- Accent
@@ -539,6 +540,7 @@ local robuxItems = {
 	{ kind="GamePass", id=GAMEPASS.EXTRA_LIFE, name="Extra Life",           desc="Permanent 1 revive per game forever" },
 	{ kind="GamePass", id=GAMEPASS.TRAIL_PACK, name="Exclusive Trail Pack", desc="Unlock 5 limited edition trails" },
 	{ kind="Product",  id=PRODUCT.REVIVE,      name="Small Revive",         desc="Revive once after dying (one match)" },
+	{ kind="Product",  id=PRODUCT.NUKE_ALL,    name="Nuke All",             desc="One-time server wipe" },
 }
 
 local gamepassOwnedCache = {} -- passId -> bool or nil when unknown

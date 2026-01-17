@@ -1,21 +1,17 @@
 -- StarterPlayerScripts/NukeClient (LocalScript)
--- Shows a lobby-only "NUKE ALL" button and plays the nuke flash VFX.
+-- Plays the nuke flash VFX when the server fires NukeVFX.
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local MarketplaceService = game:GetService("MarketplaceService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
-local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
-local NUKE_PRODUCT_ID = 3515484119
 local VFX_DEFAULT_DURATION = 10
 local VFX_DARK_DEFAULT = 5
 
-local matchState = ReplicatedStorage:WaitForChild("MatchState")
 local nukeVfxEvent = ReplicatedStorage:WaitForChild("NukeVFX")
 
 local function mk(parent, class, props)
@@ -27,79 +23,16 @@ local function mk(parent, class, props)
 	return o
 end
 
-local old = playerGui:FindFirstChild("NukeGui")
+local old = playerGui:FindFirstChild("NukeVfxGui")
 if old then old:Destroy() end
 
 local gui = mk(playerGui, "ScreenGui", {
-	Name = "NukeGui",
+	Name = "NukeVfxGui",
 	ResetOnSpawn = false,
 	IgnoreGuiInset = true,
 	Enabled = true,
-	DisplayOrder = 110,
+	DisplayOrder = 200,
 })
-
-local btn = mk(gui, "TextButton", {
-	Name = "NukeButton",
-	Text = "NUKE ALL!",
-	Size = UDim2.new(0, 140, 0, 38),
-	Position = UDim2.new(0, 20, 0.5, -140),
-	BackgroundColor3 = Color3.fromRGB(40, 40, 40),
-	TextColor3 = Color3.fromRGB(255, 255, 255),
-	TextScaled = true,
-	Font = Enum.Font.GothamBold,
-	AutoButtonColor = true,
-	ZIndex = 5,
-})
-mk(btn, "UICorner", { CornerRadius = UDim.new(0, 10) })
-mk(btn, "UIStroke", { Thickness = 1, Color = Color3.fromRGB(235, 150, 65), Transparency = 0 })
-
-
-local function isMobile()
-	return UserInputService.TouchEnabled
-end
-
-local function positionNukeButton()
-	local mobile = isMobile()
-
-	local shopGui = playerGui:FindFirstChild("ShopGui")
-	local shopBtn = shopGui and shopGui:FindFirstChild("ShopButton")
-	local coinsGui = playerGui:FindFirstChild("CoinsHUD")
-	local coinsFrame = coinsGui and coinsGui:FindFirstChildWhichIsA("Frame")
-	local invGui = playerGui:FindFirstChild("InventoryButtonsGui")
-	local invBtn = invGui and invGui:FindFirstChild("InventoryButton")
-
-	if mobile and shopBtn and coinsFrame then
-		local shopCenterY = shopBtn.AbsolutePosition.Y + (shopBtn.AbsoluteSize.Y / 2)
-		local coinsCenterY = coinsFrame.AbsolutePosition.Y + (coinsFrame.AbsoluteSize.Y / 2)
-		local midY = (shopCenterY + coinsCenterY) / 2
-		local x = shopBtn.AbsolutePosition.X
-
-		btn.AnchorPoint = Vector2.new(0, 0)
-		btn.Position = UDim2.new(0, x, 0, math.floor(midY - (btn.AbsoluteSize.Y / 2)))
-		return
-	end
-
-	if (not mobile) and shopBtn and invBtn then
-		local gap = invBtn.AbsolutePosition.Y - shopBtn.AbsolutePosition.Y
-		local minGap = btn.AbsoluteSize.Y + 8
-		local useGap = math.max(gap, minGap)
-		btn.AnchorPoint = Vector2.new(0, 0)
-		btn.Position = UDim2.new(0, shopBtn.AbsolutePosition.X, 0, shopBtn.AbsolutePosition.Y - useGap)
-		return
-	end
-
-	btn.AnchorPoint = Vector2.new(0.5, 0)
-	btn.Position = UDim2.new(0.5, 0, 0, 110)
-end
-
-positionNukeButton()
-UserInputService:GetPropertyChangedSignal("TouchEnabled"):Connect(positionNukeButton)
-UserInputService:GetPropertyChangedSignal("KeyboardEnabled"):Connect(positionNukeButton)
-playerGui.ChildAdded:Connect(function()
-	task.defer(positionNukeButton)
-end)
-task.defer(positionNukeButton)
-task.delay(1, positionNukeButton)
 
 local flash = mk(gui, "Frame", {
 	Name = "NukeFlash",
@@ -110,29 +43,6 @@ local flash = mk(gui, "Frame", {
 	Visible = false,
 	ZIndex = 200,
 })
-
-local inMatch = false
-local function canShowInMatch()
-	return player:GetAttribute("AliveInRound") == false
-end
-
-local function setButtonVisible()
-	local show = (not inMatch) or canShowInMatch()
-	btn.Visible = show
-	btn.Active = show
-end
-
-btn.MouseButton1Click:Connect(function()
-	if inMatch then return end
-	MarketplaceService:PromptProductPurchase(player, NUKE_PRODUCT_ID)
-end)
-
-matchState.OnClientEvent:Connect(function(v)
-	inMatch = (v == true)
-	setButtonVisible()
-end)
-
-player:GetAttributeChangedSignal("AliveInRound"):Connect(setButtonVisible)
 
 local function playNukeFlash(duration)
 	local total = tonumber(duration) or VFX_DEFAULT_DURATION
@@ -216,5 +126,3 @@ nukeVfxEvent.OnClientEvent:Connect(function(payload)
 		clearNukeDarkPhase()
 	end)
 end)
-
-setButtonVisible()
