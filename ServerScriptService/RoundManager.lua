@@ -220,11 +220,9 @@ local DEATH_CHAR_CONN: {[Player]: RBXScriptConnection} = {}
 local DEATH_HUM_CONN: {[Player]: RBXScriptConnection} = {}
 
 local WINNER_STATUE_NAME = "ArenaStatue"
-local WINNER_STATUE_DURATION = 8
 local winnerStatue: Model? = nil
 local winnerStatueModule = nil
 local winnerStatueState = nil
-local statueToken = 0
 
 local intensity = 0
 local intensityBase = 0
@@ -495,13 +493,6 @@ local function showWinnerStatue(winner: Player?)
 
 	cacheStatueState(model)
 	setStatueVisible(model, true)
-
-	statueToken += 1
-	local myToken = statueToken
-	task.delay(WINNER_STATUE_DURATION, function()
-		if statueToken ~= myToken then return end
-		setStatueVisible(model, false)
-	end)
 end
 
 local function clearDeathWatcher(plr: Player)
