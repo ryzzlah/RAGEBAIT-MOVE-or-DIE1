@@ -69,8 +69,26 @@ local event = ReplicatedStorage:WaitForChild("RoundStatus")
 label.Text = "Connected to server status."
 if isMobile then mobileAutoHide() end
 
+local lockUntil = 0
+local lockedText = nil
+local NUKE_LOCK_SECONDS = 15
+
 event.OnClientEvent:Connect(function(text)
+	local now = os.clock()
+	if lockUntil > now and lockedText ~= text then
+		return
+	end
+
 	label.Visible = true
 	label.Text = tostring(text)
+
+	if typeof(text) == "string" and text:find("launched a NUKE!", 1, true) then
+		lockUntil = os.clock() + NUKE_LOCK_SECONDS
+		lockedText = text
+		return
+	end
+
+	lockUntil = 0
+	lockedText = nil
 	mobileAutoHide()
 end)

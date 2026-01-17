@@ -19,7 +19,6 @@ local SMALL_REVIVE_PRODUCT = 3498314947
 local NUKE_PRODUCT_ID      = 3515484119
 local NUKE_DARK_DURATION   = 5
 local NUKE_FLASH_DURATION  = 10
-local NUKE_STATUS_DURATION = 15
 
 -- Folder holding premium trails
 local PREMIUM_FOLDER_NAME = "Robux_Trails"
@@ -189,14 +188,8 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
 	end
 
 	if receiptInfo.ProductId == NUKE_PRODUCT_ID then
-		task.spawn(function()
-			local msg = ("%s launched a NUKE!"):format(plr.Name)
-			local stopAt = os.clock() + NUKE_STATUS_DURATION
-			while os.clock() < stopAt do
-				statusEvent:FireAllClients(msg)
-				task.wait(1)
-			end
-		end)
+		local msg = ("%s launched a NUKE!"):format(plr.Name)
+		statusEvent:FireAllClients(msg)
 
 		nukeVfx:FireAllClients({
 			darkDuration = NUKE_DARK_DURATION,
