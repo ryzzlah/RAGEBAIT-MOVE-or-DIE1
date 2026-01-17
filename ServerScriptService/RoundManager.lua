@@ -1,9 +1,9 @@
 -- ServerScriptService/RoundManager
--- Stable rounds + tile recovery + earnings + spectator targets
+-- Continuous match + tile recovery + earnings + spectator targets
 -- + Revive system (Extra Life pass OR small revive dev product)
 -- + Auto-revive after dev product purchase
 -- + Spectator works in lobby + for mid-match joiners
--- + NEW: 5s "Round 1 begins in..." countdown ONLY once per match start
+-- + NEW: 5s "Match begins in..." countdown ONLY once per match start
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -12,37 +12,44 @@ local RunService = game:GetService("RunService")
 -- ===== CONFIG =====
 local MIN_PLAYERS = 2
 local INTERMISSION = 15
-local BETWEEN_ROUNDS = 2
-local ROUND_COUNT = 4
-local ROUND_TIME = 22
 local TELEPORT_Y = 6
+local MAX_MATCH_TIME = 0 -- 0 = no limit
 
 -- Make respawns quick (RoundManager handles teleports anyway)
 Players.RespawnTime = 1.0
 
--- Round difficulty tuning
-local STEP_INTERVAL = {0.95, 0.75, 0.60, 0.48}
-local BREAKS_PER_STEP = {1, 2, 3, 5}
-local RADIUS_FRACTION = {0.95, 0.78, 0.58, 0.42}
+-- Difficulty tuning (start -> end)
+local STEP_INTERVAL = {1.45, 1.10, 0.85, 0.65}
+local BREAKS_PER_STEP = {1, 2, 3, 4}
+local RADIUS_FRACTION = {1.00, 0.85, 0.68, 0.52}
+
+local START_INTERVAL = STEP_INTERVAL[1]
+local END_INTERVAL = STEP_INTERVAL[#STEP_INTERVAL]
+local START_BREAKS = BREAKS_PER_STEP[1]
+local END_BREAKS = BREAKS_PER_STEP[#BREAKS_PER_STEP]
+local START_RADIUS_FRAC = RADIUS_FRACTION[1]
+local END_RADIUS_FRAC = RADIUS_FRACTION[#RADIUS_FRACTION]
 
 -- Warning/kill window
-local WARNING_STEP_TIME = 0.10
-local WARNING_STEPS_BY_ROUND = {9, 7, 6, 5}
+local WARNING_STEP_TIME = 0.12
+local WARNING_STEPS_BY_ROUND = {11, 9, 7, 6}
+local START_WARNING = WARNING_STEPS_BY_ROUND[1]
+local END_WARNING = WARNING_STEPS_BY_ROUND[#WARNING_STEPS_BY_ROUND]
 local KILL_ACTIVE = 0.80
 
 -- Tile recovery
-local TILE_RESPAWN_BY_ROUND = {1.25, 1.50, 1.70, 1.90}
-local TILE_RESPAWN_SUDDEN = 1.25
+local TILE_RESPAWN_BY_ROUND = {0.90, 1.20, 1.50, 1.80}
+local START_RESPAWN = TILE_RESPAWN_BY_ROUND[1]
+local END_RESPAWN = TILE_RESPAWN_BY_ROUND[#TILE_RESPAWN_BY_ROUND]
 
 -- Targeting
 local THREAT_CHANCE = 0.80
 local THREAT_RADIUS = 16
 
--- Sudden death
-local SUDDEN_DEATH_TIME = 25
-local SUDDEN_INTERVAL = 0.22
-local SUDDEN_BREAKS = 7
-local SUDDEN_WARNING = 4
+-- Intensity pacing
+local RAMP_TIME = 90
+local RESET_HOLD = 2.0
+local INTENSITY_RESET_GRACE = 0.75
 
 -- ===== REWARDS =====
 local SURVIVAL_COIN_INTERVAL = 2
@@ -59,7 +66,7 @@ local SMALL_REVIVE_PRODUCT = 3498314947 -- must match MonetisationGrants
 local REVIVE_TIMEOUT = 10
 local NO_REVIVES_IF_MATCH_SIZE_LEQ = 2
 
--- ===== NEW: PRE-ROUND COUNTDOWN (ONLY ONCE) =====
+-- ===== NEW: PRE-MATCH COUNTDOWN (ONLY ONCE) =====
 local PRE_ROUND_COUNTDOWN = 5
 
 -- ===== REFERENCES =====
@@ -87,6 +94,10 @@ local reviveRemote  = getOrMakeRemote("ReviveRemote")
 
 local function broadcast(msg)
 	statusEvent:FireAllClients(tostring(msg))
+end
+
+local function lerp(a: number, b: number, t: number): number
+	return a + (b - a) * t
 end
 
 -- ===== READY =====
@@ -135,6 +146,7 @@ local function ensureLeaderstats(plr: Player)
 	if plr:GetAttribute("AliveInRound") == nil then plr:SetAttribute("AliveInRound", false) end
 	if plr:GetAttribute("Eliminated") == nil then plr:SetAttribute("Eliminated", false) end
 	if plr:GetAttribute("ReviveTokens") == nil then plr:SetAttribute("ReviveTokens", 0) end
+	if plr:GetAttribute("MatchParticipant") == nil then plr:SetAttribute("MatchParticipant", false) end
 end
 
 Players.PlayerAdded:Connect(ensureLeaderstats)
@@ -204,10 +216,20 @@ local MATCH_RUNNING = false
 local REVIVE_USED_PASS: {[Player]: boolean} = {}
 local REVIVE_PENDING: {[Player]: boolean} = {}
 local TOKEN_WATCH_CONN: {[Player]: RBXScriptConnection} = {}
+local DEATH_CHAR_CONN: {[Player]: RBXScriptConnection} = {}
+local DEATH_HUM_CONN: {[Player]: RBXScriptConnection} = {}
+
+local intensity = 0
+local intensityBase = 0
+local intensityResetAt = 0
+local nextStepTime = 0
+local matchTotalPlayers = 0
+local elimCount = 0
 
 local function setInRound(plr: Player, v: boolean) plr:SetAttribute("InRound", v) end
 local function setAliveInRound(plr: Player, v: boolean) plr:SetAttribute("AliveInRound", v) end
 local function setElim(plr: Player, v: boolean) plr:SetAttribute("Eliminated", v) end
+local function setMatchParticipant(plr: Player, v: boolean) plr:SetAttribute("MatchParticipant", v) end
 local function isElim(plr: Player): boolean return plr:GetAttribute("Eliminated") == true end
 
 local function alivePlayers(matchPlayers: {Player})
@@ -345,7 +367,7 @@ local function sendHomeSpectator(plr: Player)
 	REVIVE_PENDING[plr] = nil
 	reviveRemote:FireClient(plr, "Hide")
 
-	-- Stay in match as spectator so spectate UI doesn’t disappear
+	-- Stay in match as spectator so spectate UI doesn't disappear
 	setElim(plr, true)
 	setInRound(plr, true)
 	setAliveInRound(plr, false)
@@ -375,10 +397,59 @@ local function detachTokenWatcher(plr: Player)
 	end
 end
 
+local function clearDeathWatcher(plr: Player)
+	if DEATH_HUM_CONN[plr] then
+		DEATH_HUM_CONN[plr]:Disconnect()
+		DEATH_HUM_CONN[plr] = nil
+	end
+	if DEATH_CHAR_CONN[plr] then
+		DEATH_CHAR_CONN[plr]:Disconnect()
+		DEATH_CHAR_CONN[plr] = nil
+	end
+end
+
+local function hookDeathFor(plr: Player, hum: Humanoid?)
+	if DEATH_HUM_CONN[plr] then
+		DEATH_HUM_CONN[plr]:Disconnect()
+		DEATH_HUM_CONN[plr] = nil
+	end
+	if not hum then return end
+
+	DEATH_HUM_CONN[plr] = hum.Died:Connect(function()
+		if not MATCH_RUNNING then return end
+		if plr:GetAttribute("InRound") ~= true then return end
+		if plr:GetAttribute("AliveInRound") ~= true then return end
+		eliminate(plr, "died!")
+	end)
+end
+
+local function attachDeathWatcher(plr: Player)
+	clearDeathWatcher(plr)
+	DEATH_CHAR_CONN[plr] = plr.CharacterAdded:Connect(function(char)
+		local hum = char:FindFirstChildOfClass("Humanoid") or char:WaitForChild("Humanoid", 5)
+		hookDeathFor(plr, hum)
+	end)
+
+	if plr.Character then
+		local hum = plr.Character:FindFirstChildOfClass("Humanoid")
+		hookDeathFor(plr, hum)
+	end
+end
+
 local function eliminate(plr: Player, reason: string?)
+	if plr:GetAttribute("AdminGodMode") == true then return end
 	if isElim(plr) then return end
 	setElim(plr, true)
 	setAliveInRound(plr, false)
+
+	if MATCH_RUNNING then
+		elimCount += 1
+		local total = math.max(matchTotalPlayers, 1)
+		intensityBase = math.clamp((elimCount / total) * 0.35, 0, 0.35)
+		intensity = intensityBase
+		intensityResetAt = os.clock()
+		nextStepTime = math.max(nextStepTime, intensityResetAt + INTENSITY_RESET_GRACE)
+	end
 
 	broadcast(plr.Name .. " " .. (reason or "died!"))
 
@@ -663,6 +734,12 @@ resetTilesToDefaults()
 matchState:FireAllClients(false)
 broadcast("Waiting for players...")
 
+local function formatTime(seconds: number): string
+	local mins = math.floor(seconds / 60)
+	local secs = seconds % 60
+	return string.format("%d:%02d", mins, secs)
+end
+
 -- ===== MAIN LOOP =====
 while true do
 	-- Wait until enough ready players
@@ -682,6 +759,7 @@ while true do
 		REVIVE_PENDING[plr] = nil
 		REVIVE_USED_PASS[plr] = nil
 		detachTokenWatcher(plr)
+		clearDeathWatcher(plr)
 
 		if not plr.Character then plr:LoadCharacter() end
 		task.wait(0.02)
@@ -721,14 +799,32 @@ while true do
 		REVIVE_USED_PASS[plr] = nil
 		REVIVE_PENDING[plr] = nil
 		detachTokenWatcher(plr)
+		clearDeathWatcher(plr)
 
 		if not plr.Character then plr:LoadCharacter() end
 		setElim(plr, false)
 		setInRound(plr, true)
 		setAliveInRound(plr, true)
+		setMatchParticipant(plr, true)
+		attachDeathWatcher(plr)
 
 		task.wait(0.03)
 		teleportToArena(plr)
+	end
+
+	-- Non-participants stay in lobby but should spectate during the match
+	local isMatchPlayer: {[Player]: boolean} = {}
+	for _, plr in ipairs(matchPlayers) do
+		isMatchPlayer[plr] = true
+	end
+	for _, plr in ipairs(Players:GetPlayers()) do
+		if not isMatchPlayer[plr] then
+			ensureLeaderstats(plr)
+			setElim(plr, true)
+			setInRound(plr, true)
+			setAliveInRound(plr, false)
+			setMatchParticipant(plr, false)
+		end
 	end
 
 	-- Anyone who joins mid-match becomes a spectator (so they get spectate button)
@@ -737,25 +833,32 @@ while true do
 		task.defer(function()
 			if not MATCH_RUNNING then return end
 			ensureLeaderstats(plr)
+			matchState:FireClient(plr, true)
+			task.delay(1.0, function()
+				if MATCH_RUNNING and plr and plr.Parent == Players then
+					matchState:FireClient(plr, true)
+				end
+			end)
 			setElim(plr, true)
 			setInRound(plr, true)
 			setAliveInRound(plr, false)
+			setMatchParticipant(plr, false)
 			if not plr.Character then plr:LoadCharacter() end
 			task.wait(0.05)
 			teleportToLobby(plr)
 		end)
 	end)
 
-	-- ===== NEW: PRE-ROUND COUNTDOWN (ONLY ONCE PER MATCH) =====
+	-- ===== NEW: PRE-MATCH COUNTDOWN (ONLY ONCE PER MATCH) =====
 	local PRE_ROUND = true
 	for i = PRE_ROUND_COUNTDOWN, 1, -1 do
 		-- Only a friendly countdown. No tiles, no kills yet.
-		broadcast(("Round 1 begins in %d..."):format(i))
+		broadcast(("Match begins in %d..."):format(i))
 		task.wait(1)
 	end
-	broadcast("Round 1 GO!")
+	broadcast("Match GO!")
 	PRE_ROUND = false
-	-- =========================================================
+	-- ==========================================================
 
 	local nextPay = os.clock() + SURVIVAL_COIN_INTERVAL
 	local lastPos: {[Player]: Vector3} = {}
@@ -769,10 +872,16 @@ while true do
 		outsideSince[plr] = nil
 	end
 
-	local currentRoundIndex = 1
-	local currentActiveRadius = maxR * (RADIUS_FRACTION[currentRoundIndex] or 0.5)
-	local currentWarningSteps = WARNING_STEPS_BY_ROUND[currentRoundIndex] or 6
-	local currentRespawnDelay = TILE_RESPAWN_BY_ROUND[currentRoundIndex] or 1.5
+	intensity = 0
+	intensityBase = 0
+	elimCount = 0
+	matchTotalPlayers = #matchPlayers
+	intensityResetAt = os.clock()
+	nextStepTime = os.clock() + START_INTERVAL
+
+	local currentActiveRadius = maxR * START_RADIUS_FRAC
+	local currentWarningSteps = START_WARNING
+	local currentRespawnDelay = START_RESPAWN
 
 	local function forceKillTileUnder(plr: Player, warningSteps: number, respawnDelay: number)
 		local hrp = getRoot(plr)
@@ -782,14 +891,14 @@ while true do
 		if tile:GetAttribute("Disabled") == true then return end
 		if tile:GetAttribute("InUse") == true then return end
 		task.spawn(function()
-			warnKillThenRecover(tile, math.max(3, math.floor(warningSteps/2)), respawnDelay)
+			warnKillThenRecover(tile, math.max(3, math.floor(warningSteps / 2)), respawnDelay)
 		end)
 	end
 
 	-- Heartbeat kill / anti-idle / anti-outside (STARTS AFTER COUNTDOWN)
 	local killConn
 	killConn = RunService.Heartbeat:Connect(function()
-		if PRE_ROUND then return end -- << IMPORTANT: no kills during countdown
+		if PRE_ROUND then return end -- IMPORTANT: no kills during countdown
 
 		for _, plr in ipairs(matchPlayers) do
 			if plr.Parent ~= Players then continue end
@@ -834,51 +943,64 @@ while true do
 		end
 	end)
 
-	-- ===== ROUND LOOP =====
-	for round = 1, ROUND_COUNT do
-		currentRoundIndex = round
-		currentActiveRadius = maxR * (RADIUS_FRACTION[round] or 0.5)
-		currentWarningSteps = WARNING_STEPS_BY_ROUND[round] or 6
-		currentRespawnDelay = TILE_RESPAWN_BY_ROUND[round] or 1.5
+	-- ===== CONTINUOUS MATCH LOOP =====
+	local matchStartTime = os.clock()
+	local nextStatusTime = matchStartTime
+	local candidates: {BasePart} = {}
+	local lastRadiusUsed = 0
 
+	while true do
 		local alive = alivePlayers(matchPlayers)
 		if #alive == 1 then LAST_STANDING = alive[1] end
 		if #alive <= 1 then break end
 
-		local radius = currentActiveRadius
-		local interval = STEP_INTERVAL[round] or 0.6
-		local breaksPer = BREAKS_PER_STEP[round] or 3
-		local warningSteps = currentWarningSteps
-		local respawnDelay = currentRespawnDelay
-
-		local candidates = buildCandidates(radius)
-		if #candidates < 20 then
-			candidates = buildCandidates(maxR)
+		local now = os.clock()
+		if MAX_MATCH_TIME > 0 and (now - matchStartTime) >= MAX_MATCH_TIME then
+			break
 		end
 
-		local endTime = os.clock() + ROUND_TIME
-		while os.clock() < endTime do
-			alive = alivePlayers(matchPlayers)
-			if #alive == 1 then LAST_STANDING = alive[1] end
-			if #alive <= 1 then break end
+		local tSinceReset = now - intensityResetAt
+		if tSinceReset < RESET_HOLD then
+			intensity = intensityBase
+		else
+			local t = (tSinceReset - RESET_HOLD) / RAMP_TIME
+			intensity = math.clamp(intensityBase + (1 - intensityBase) * t, 0, 1)
+		end
 
-			if os.clock() >= nextPay then
-				for _, p in ipairs(alive) do
-					earnedThisMatch[p] += SURVIVAL_COINS_PER_TICK
-				end
-				nextPay = os.clock() + SURVIVAL_COIN_INTERVAL
+		local stepInterval = lerp(START_INTERVAL, END_INTERVAL, intensity)
+		local breaksPerStep = math.max(1, math.floor(lerp(START_BREAKS, END_BREAKS, intensity) + 0.5))
+		local warningSteps = math.max(1, math.floor(lerp(START_WARNING, END_WARNING, intensity) + 0.5))
+		local radiusFraction = lerp(START_RADIUS_FRAC, END_RADIUS_FRAC, intensity)
+		local respawnDelay = lerp(START_RESPAWN, END_RESPAWN, intensity)
+
+		currentActiveRadius = maxR * radiusFraction
+		currentWarningSteps = warningSteps
+		currentRespawnDelay = respawnDelay
+
+		if now >= nextPay then
+			for _, p in ipairs(alive) do
+				earnedThisMatch[p] += SURVIVAL_COINS_PER_TICK
 			end
+			nextPay = now + SURVIVAL_COIN_INTERVAL
+		end
 
-			broadcast(("Round %d/%d | Alive: %d"):format(round, ROUND_COUNT, #alive))
+		if now >= nextStatusTime then
+			local elapsed = math.floor(now - matchStartTime)
+			broadcast(("Alive: %d | Intensity: %d%% | Next tiles: %d | Time: %s")
+				:format(#alive, math.floor(intensity * 100 + 0.5), breaksPerStep, formatTime(elapsed)))
+			nextStatusTime = now + 0.75
+		end
 
-			if #candidates < (breaksPer + 5) then
-				candidates = buildCandidates(radius)
+		if now >= nextStepTime then
+			if math.abs(currentActiveRadius - lastRadiusUsed) > 0.5 or #candidates < (breaksPerStep + 5) then
+				candidates = buildCandidates(currentActiveRadius)
 				if #candidates < 20 then
 					candidates = buildCandidates(maxR)
 				end
+				lastRadiusUsed = currentActiveRadius
 			end
 
-			for _ = 1, breaksPer do
+			for _ = 1, breaksPerStep do
 				local t = pickThreatTile(candidates, alive)
 				if not t then break end
 				task.spawn(function()
@@ -886,47 +1008,14 @@ while true do
 				end)
 			end
 
-			task.wait(interval)
+			nextStepTime = now + stepInterval
 		end
 
-		broadcast("Round " .. round .. " ended.")
-		task.wait(BETWEEN_ROUNDS)
+		local sleepFor = math.min(0.05, math.max(0, nextStepTime - now))
+		task.wait(sleepFor)
 	end
 
-	-- ===== SUDDEN DEATH =====
 	local alive = alivePlayers(matchPlayers)
-	if #alive == 1 then LAST_STANDING = alive[1] end
-
-	if #alive > 1 then
-		broadcast("SUDDEN DEATH!")
-		currentActiveRadius = maxR * 0.7
-		currentWarningSteps = SUDDEN_WARNING
-		currentRespawnDelay = TILE_RESPAWN_SUDDEN
-
-		local endSD = os.clock() + SUDDEN_DEATH_TIME
-		while os.clock() < endSD do
-			alive = alivePlayers(matchPlayers)
-			if #alive == 1 then LAST_STANDING = alive[1] end
-			if #alive <= 1 then break end
-
-			broadcast(("SUDDEN DEATH | Alive: %d"):format(#alive))
-
-			local candidates = buildCandidates(maxR * 0.7)
-			if #candidates < 20 then candidates = buildCandidates(maxR) end
-
-			for _ = 1, SUDDEN_BREAKS do
-				local t = pickThreatTile(candidates, alive)
-				if not t then break end
-				task.spawn(function()
-					warnKillThenRecover(t, SUDDEN_WARNING, TILE_RESPAWN_SUDDEN)
-				end)
-			end
-
-			task.wait(SUDDEN_INTERVAL)
-		end
-	end
-
-	alive = alivePlayers(matchPlayers)
 	if #alive == 1 then
 		local winner = alive[1]
 		broadcast("Winner: " .. winner.Name)
@@ -944,6 +1033,12 @@ while true do
 	-- ===== END MATCH =====
 	MATCH_RUNNING = false
 	PRE_ROUND = false
+	intensity = 0
+	intensityBase = 0
+	intensityResetAt = 0
+	nextStepTime = 0
+	matchTotalPlayers = 0
+	elimCount = 0
 
 	if joinConn then joinConn:Disconnect() end
 	if killConn then killConn:Disconnect() end
@@ -957,10 +1052,12 @@ while true do
 		REVIVE_PENDING[plr] = nil
 		REVIVE_USED_PASS[plr] = nil
 		detachTokenWatcher(plr)
+		clearDeathWatcher(plr)
 
 		setElim(plr, true)
 		setInRound(plr, false)
 		setAliveInRound(plr, false)
+		setMatchParticipant(plr, false)
 
 		reviveRemote:FireClient(plr, "Hide")
 		teleportToLobby(plr)
@@ -972,6 +1069,7 @@ while true do
 			setInRound(plr, false)
 			setAliveInRound(plr, false)
 			setElim(plr, true)
+			setMatchParticipant(plr, false)
 			reviveRemote:FireClient(plr, "Hide")
 		end
 	end
@@ -981,4 +1079,3 @@ while true do
 
 	task.wait(3)
 end
-

@@ -45,6 +45,7 @@ local TOP_BG       = Color3.fromRGB(14,14,14)
 -- Remotes
 local buyWithCoins = ReplicatedStorage:WaitForChild("BuyWithCoins")
 local matchState   = ReplicatedStorage:WaitForChild("MatchState")
+local inMatch = false
 
 local shopResult = ReplicatedStorage:FindFirstChild("ShopResult")
 if not shopResult then
@@ -138,13 +139,28 @@ local gui = mk(playerGui, "ScreenGui", {
 	DisplayOrder = 100,
 })
 
-matchState.OnClientEvent:Connect(function(inMatch)
-	gui.Enabled = not inMatch
-	if inMatch then
+matchState.OnClientEvent:Connect(function(v)
+	inMatch = (v == true)
+	local participant = player:GetAttribute("MatchParticipant") == true
+	gui.Enabled = (not inMatch) or (not participant)
+	if inMatch and participant then
 		local p = gui:FindFirstChild("ShopPanel")
 		local o = gui:FindFirstChild("Overlay")
 		if p then p.Visible = false end
 		if o then o.Visible = false end
+	end
+end)
+
+player:GetAttributeChangedSignal("MatchParticipant"):Connect(function()
+	local participant = player:GetAttribute("MatchParticipant") == true
+	if inMatch then
+		gui.Enabled = not participant
+		if participant then
+			local p = gui:FindFirstChild("ShopPanel")
+			local o = gui:FindFirstChild("Overlay")
+			if p then p.Visible = false end
+			if o then o.Visible = false end
+		end
 	end
 end)
 
@@ -423,7 +439,7 @@ end
 -- =========================
 -- Row builder (returns references so we can async-update)
 -- =========================
-local function addItemRow(labelText, subText, buttonText, onClick, disabled, forceOwned)
+local function addItemRow(labelText, subText, buttonText, onClick, disabled, forceOwned, iconFillColor)
 	local row = mk(list, "Frame", {
 		Size=UDim2.new(1,0,0,66),
 		BackgroundColor3=ROW_BG,
@@ -436,13 +452,13 @@ local function addItemRow(labelText, subText, buttonText, onClick, disabled, for
 	local icon = mk(row, "ImageLabel", {
 		Size=UDim2.new(0,44,0,44),
 		Position=UDim2.new(0,12,0.5,-22),
-		BackgroundColor3=Color3.fromRGB(16,16,16),
+		BackgroundColor3=iconFillColor or Color3.fromRGB(16,16,16),
 		BorderSizePixel=0,
 		ZIndex=23,
 		ScaleType=Enum.ScaleType.Crop
 	})
 	mk(icon, "UICorner", {CornerRadius=UDim.new(1,0)})
-	mk(icon, "UIStroke", {Thickness=1, Color=Color3.fromRGB(55,55,55), Transparency=0})
+	mk(icon, "UIStroke", {Thickness=1, Color=Color3.fromRGB(45,45,45), Transparency=0})
 	setCircularIcon(icon, nil)
 
 	local textLbl = mk(row, "TextLabel", {
@@ -532,6 +548,23 @@ local COIN_CATEGORIES = {
 	},
 }
 
+local TRAIL_COLORS = {
+	Trail_Yellow  = Color3.fromRGB(255, 221, 64),
+	Trail_Green   = Color3.fromRGB(80, 200, 120),
+	Trail_Blue    = Color3.fromRGB(80, 160, 255),
+	Trail_Orange  = Color3.fromRGB(255, 145, 70),
+	Trail_Red     = Color3.fromRGB(235, 70, 70),
+	Trail_Pink    = Color3.fromRGB(255, 120, 200),
+	Trail_Teal    = Color3.fromRGB(70, 210, 200),
+	Trail_Purple  = Color3.fromRGB(150, 90, 220),
+	Trail_Magenta = Color3.fromRGB(210, 80, 210),
+	Trail_White   = Color3.fromRGB(235, 235, 235),
+}
+
+local function trailColorForItemId(itemId: string)
+	return TRAIL_COLORS[itemId]
+end
+
 -- =========================
 -- Robux items
 -- =========================
@@ -590,7 +623,8 @@ local function renderCoinsCategory(catId: string)
 		if cat.id == catId then
 			for _, item in ipairs(cat.items) do
 				local owned = isOwnedAttr(cat.ownedCategory, item.itemId)
-				addItemRow(item.name, item.desc, item.price, item.buy, false, owned)
+				local fillColor = (cat.id == "Trails") and trailColorForItemId(item.itemId) or nil
+				addItemRow(item.name, item.desc, item.price, item.buy, false, owned, fillColor)
 			end
 			break
 		end
