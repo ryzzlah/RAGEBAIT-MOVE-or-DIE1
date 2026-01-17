@@ -456,6 +456,10 @@ local function setStatueVisible(model: Model?, visible: boolean)
 		for inst, v in pairs(winnerStatueState.transparency) do
 			if inst.Parent then
 				inst.Transparency = v
+				if inst:IsA("BasePart") then
+					inst.CanCollide = false
+					inst.CanTouch = false
+				end
 			end
 		end
 		for inst, v in pairs(winnerStatueState.enabled) do
@@ -469,6 +473,10 @@ local function setStatueVisible(model: Model?, visible: boolean)
 	for _, inst in ipairs(model:GetDescendants()) do
 		if inst:IsA("BasePart") or inst:IsA("Decal") or inst:IsA("Texture") then
 			inst.Transparency = 1
+			if inst:IsA("BasePart") then
+				inst.CanCollide = false
+				inst.CanTouch = false
+			end
 		elseif inst:IsA("BillboardGui") or inst:IsA("SurfaceGui")
 			or inst:IsA("ParticleEmitter") or inst:IsA("Trail") or inst:IsA("Beam") then
 			inst.Enabled = false
