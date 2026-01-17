@@ -14,7 +14,6 @@ local playerGui = player:WaitForChild("PlayerGui")
 local NUKE_PRODUCT_ID = 3515484119
 local VFX_DEFAULT_DURATION = 10
 local VFX_DARK_DEFAULT = 5
-local ADMIN_USER_ID = 1676263675
 
 local matchState = ReplicatedStorage:WaitForChild("MatchState")
 local nukeVfxEvent = ReplicatedStorage:WaitForChild("NukeVFX")
@@ -62,9 +61,25 @@ end
 local function positionNukeButton()
 	local mobile = isMobile()
 
-	if player.UserId == ADMIN_USER_ID then
-		btn.AnchorPoint = Vector2.new(0, 1)
-		btn.Position = mobile and UDim2.new(0, 18, 1, -300) or UDim2.new(0, 18, 1, -90)
+	if not mobile then
+		btn.AnchorPoint = Vector2.new(0.5, 0)
+		btn.Position = UDim2.new(0.5, 0, 0, 110)
+		return
+	end
+
+	local shopGui = playerGui:FindFirstChild("ShopGui")
+	local shopBtn = shopGui and shopGui:FindFirstChild("ShopButton")
+	local coinsGui = playerGui:FindFirstChild("CoinsHUD")
+	local coinsFrame = coinsGui and coinsGui:FindFirstChildWhichIsA("Frame")
+
+	if shopBtn and coinsFrame then
+		local shopCenterY = shopBtn.AbsolutePosition.Y + (shopBtn.AbsoluteSize.Y / 2)
+		local coinsCenterY = coinsFrame.AbsolutePosition.Y + (coinsFrame.AbsoluteSize.Y / 2)
+		local midY = (shopCenterY + coinsCenterY) / 2
+		local x = shopBtn.AbsolutePosition.X
+
+		btn.AnchorPoint = Vector2.new(0, 0)
+		btn.Position = UDim2.new(0, x, 0, math.floor(midY - (btn.AbsoluteSize.Y / 2)))
 		return
 	end
 
@@ -75,6 +90,11 @@ end
 positionNukeButton()
 UserInputService:GetPropertyChangedSignal("TouchEnabled"):Connect(positionNukeButton)
 UserInputService:GetPropertyChangedSignal("KeyboardEnabled"):Connect(positionNukeButton)
+playerGui.ChildAdded:Connect(function()
+	task.defer(positionNukeButton)
+end)
+task.defer(positionNukeButton)
+task.delay(1, positionNukeButton)
 
 local flash = mk(gui, "Frame", {
 	Name = "NukeFlash",
