@@ -61,18 +61,12 @@ end
 local function positionNukeButton()
 	local mobile = isMobile()
 
-	if not mobile then
-		btn.AnchorPoint = Vector2.new(0.5, 0)
-		btn.Position = UDim2.new(0.5, 0, 0, 110)
-		return
-	end
-
 	local shopGui = playerGui:FindFirstChild("ShopGui")
 	local shopBtn = shopGui and shopGui:FindFirstChild("ShopButton")
 	local coinsGui = playerGui:FindFirstChild("CoinsHUD")
 	local coinsFrame = coinsGui and coinsGui:FindFirstChildWhichIsA("Frame")
 
-	if shopBtn and coinsFrame then
+	if mobile and shopBtn and coinsFrame then
 		local shopCenterY = shopBtn.AbsolutePosition.Y + (shopBtn.AbsoluteSize.Y / 2)
 		local coinsCenterY = coinsFrame.AbsolutePosition.Y + (coinsFrame.AbsoluteSize.Y / 2)
 		local midY = (shopCenterY + coinsCenterY) / 2
@@ -80,6 +74,12 @@ local function positionNukeButton()
 
 		btn.AnchorPoint = Vector2.new(0, 0)
 		btn.Position = UDim2.new(0, x, 0, math.floor(midY - (btn.AbsoluteSize.Y / 2)))
+		return
+	end
+
+	if (not mobile) and shopBtn then
+		btn.AnchorPoint = Vector2.new(0, 1)
+		btn.Position = UDim2.new(0, shopBtn.AbsolutePosition.X, 0, shopBtn.AbsolutePosition.Y - 6)
 		return
 	end
 
