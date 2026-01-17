@@ -63,7 +63,7 @@ local function positionBelowInventory()
 			0,
 			invBtn.AbsolutePosition.X,
 			0,
-			invBtn.AbsolutePosition.Y + invBtn.AbsoluteSize.Y + 8
+			invBtn.AbsolutePosition.Y + invBtn.AbsoluteSize.Y + 16
 		)
 		return true
 	end

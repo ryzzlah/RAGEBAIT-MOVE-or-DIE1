@@ -81,8 +81,10 @@ local function positionNukeButton()
 
 	if (not mobile) and shopBtn and invBtn then
 		local gap = invBtn.AbsolutePosition.Y - shopBtn.AbsolutePosition.Y
+		local minGap = btn.AbsoluteSize.Y + 8
+		local useGap = math.max(gap, minGap)
 		btn.AnchorPoint = Vector2.new(0, 0)
-		btn.Position = UDim2.new(0, shopBtn.AbsolutePosition.X, 0, shopBtn.AbsolutePosition.Y - gap)
+		btn.Position = UDim2.new(0, shopBtn.AbsolutePosition.X, 0, shopBtn.AbsolutePosition.Y - useGap)
 		return
 	end
 
