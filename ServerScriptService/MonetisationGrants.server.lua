@@ -16,6 +16,7 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local TRAIL_PACK_PASS_ID   = 1651928187
 local EXTRA_LIFE_PASS_ID   = 1652150771
 local SMALL_REVIVE_PRODUCT = 3498314947
+local NUKE_PRODUCT_ID      = 3515484119
 
 -- Folder holding premium trails
 local PREMIUM_FOLDER_NAME = "Robux_Trails"
@@ -32,6 +33,20 @@ if not reviveRemote then
 	reviveRemote = Instance.new("RemoteEvent")
 	reviveRemote.Name = "ReviveRemote"
 	reviveRemote.Parent = ReplicatedStorage
+end
+
+local nukeVfx = ReplicatedStorage:FindFirstChild("NukeVFX")
+if not nukeVfx then
+	nukeVfx = Instance.new("RemoteEvent")
+	nukeVfx.Name = "NukeVFX"
+	nukeVfx.Parent = ReplicatedStorage
+end
+
+local statusEvent = ReplicatedStorage:FindFirstChild("RoundStatus")
+if not statusEvent then
+	statusEvent = Instance.new("RemoteEvent")
+	statusEvent.Name = "RoundStatus"
+	statusEvent.Parent = ReplicatedStorage
 end
 
 local premiumFolder = ServerStorage:WaitForChild(PREMIUM_FOLDER_NAME)
@@ -166,6 +181,25 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
 
 		-- If they're currently eliminated in a running match, ping UI/server logic to re-check
 		reviveRemote:FireClient(plr, "Refresh")
+
+		return Enum.ProductPurchaseDecision.PurchaseGranted
+	end
+
+	if receiptInfo.ProductId == NUKE_PRODUCT_ID then
+		statusEvent:FireAllClients(("%s launched a NUKE!"):format(plr.Name))
+		nukeVfx:FireAllClients(15)
+
+		for _, p in ipairs(Players:GetPlayers()) do
+			if p:GetAttribute("InRound") == true or p:GetAttribute("MatchParticipant") == true then
+				p:SetAttribute("AliveInRound", false)
+				p:SetAttribute("Eliminated", true)
+			end
+			local char = p.Character
+			local hum = char and char:FindFirstChildOfClass("Humanoid")
+			if hum and hum.Health > 0 then
+				hum.Health = 0
+			end
+		end
 
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end
