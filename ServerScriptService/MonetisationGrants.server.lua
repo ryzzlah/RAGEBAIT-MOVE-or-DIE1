@@ -17,6 +17,9 @@ local TRAIL_PACK_PASS_ID   = 1651928187
 local EXTRA_LIFE_PASS_ID   = 1652150771
 local SMALL_REVIVE_PRODUCT = 3498314947
 local NUKE_PRODUCT_ID      = 3515484119
+local NUKE_DARK_DURATION   = 5
+local NUKE_FLASH_DURATION  = 10
+local NUKE_STATUS_DURATION = 15
 
 -- Folder holding premium trails
 local PREMIUM_FOLDER_NAME = "Robux_Trails"
@@ -186,20 +189,33 @@ MarketplaceService.ProcessReceipt = function(receiptInfo)
 	end
 
 	if receiptInfo.ProductId == NUKE_PRODUCT_ID then
-		statusEvent:FireAllClients(("%s launched a NUKE!"):format(plr.Name))
-		nukeVfx:FireAllClients(15)
+		task.spawn(function()
+			local msg = ("%s launched a NUKE!"):format(plr.Name)
+			local stopAt = os.clock() + NUKE_STATUS_DURATION
+			while os.clock() < stopAt do
+				statusEvent:FireAllClients(msg)
+				task.wait(1)
+			end
+		end)
 
-		for _, p in ipairs(Players:GetPlayers()) do
-			if p:GetAttribute("InRound") == true or p:GetAttribute("MatchParticipant") == true then
-				p:SetAttribute("AliveInRound", false)
-				p:SetAttribute("Eliminated", true)
+		nukeVfx:FireAllClients({
+			darkDuration = NUKE_DARK_DURATION,
+			flashDuration = NUKE_FLASH_DURATION,
+		})
+
+		task.delay(NUKE_DARK_DURATION, function()
+			for _, p in ipairs(Players:GetPlayers()) do
+				if p:GetAttribute("InRound") == true or p:GetAttribute("MatchParticipant") == true then
+					p:SetAttribute("AliveInRound", false)
+					p:SetAttribute("Eliminated", true)
+				end
+				local char = p.Character
+				local hum = char and char:FindFirstChildOfClass("Humanoid")
+				if hum and hum.Health > 0 then
+					hum.Health = 0
+				end
 			end
-			local char = p.Character
-			local hum = char and char:FindFirstChildOfClass("Humanoid")
-			if hum and hum.Health > 0 then
-				hum.Health = 0
-			end
-		end
+		end)
 
 		return Enum.ProductPurchaseDecision.PurchaseGranted
 	end

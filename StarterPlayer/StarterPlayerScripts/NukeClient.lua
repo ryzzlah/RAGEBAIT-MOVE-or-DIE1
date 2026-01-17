@@ -5,12 +5,14 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local MarketplaceService = game:GetService("MarketplaceService")
 local TweenService = game:GetService("TweenService")
+local Lighting = game:GetService("Lighting")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
 local NUKE_PRODUCT_ID = 3515484119
-local VFX_DEFAULT_DURATION = 15
+local VFX_DEFAULT_DURATION = 10
+local VFX_DARK_DEFAULT = 5
 
 local matchState = ReplicatedStorage:WaitForChild("MatchState")
 local nukeVfxEvent = ReplicatedStorage:WaitForChild("NukeVFX")
@@ -102,9 +104,60 @@ local function playNukeFlash(duration)
 	flash.Visible = false
 end
 
-nukeVfxEvent.OnClientEvent:Connect(function(duration)
+local function playNukeDarkPhase(duration)
+	local total = tonumber(duration) or VFX_DARK_DEFAULT
+	total = math.max(0.5, total)
+
+	local effect = Lighting:FindFirstChild("NukeDarkEffect")
+	if not effect then
+		effect = Instance.new("ColorCorrectionEffect")
+		effect.Name = "NukeDarkEffect"
+		effect.Parent = Lighting
+	end
+
+	effect.Enabled = true
+	effect.Brightness = -0.3
+	effect.Contrast = 0.5
+	effect.Saturation = -0.2
+	effect.TintColor = Color3.fromRGB(120, 110, 90)
+
+	local tween = TweenService:Create(
+		effect,
+		TweenInfo.new(total, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+		{ Brightness = -0.6, Contrast = 0.8, Saturation = -0.4 }
+	)
+	tween:Play()
+	tween.Completed:Wait()
+end
+
+local function clearNukeDarkPhase()
+	local effect = Lighting:FindFirstChild("NukeDarkEffect")
+	if not effect then return end
+	local tween = TweenService:Create(
+		effect,
+		TweenInfo.new(1.0, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{ Brightness = 0, Contrast = 0, Saturation = 0, TintColor = Color3.fromRGB(255, 255, 255) }
+	)
+	tween:Play()
+	tween.Completed:Wait()
+	effect:Destroy()
+end
+
+nukeVfxEvent.OnClientEvent:Connect(function(payload)
+	local darkDuration = VFX_DARK_DEFAULT
+	local flashDuration = VFX_DEFAULT_DURATION
+
+	if typeof(payload) == "table" then
+		darkDuration = tonumber(payload.darkDuration) or darkDuration
+		flashDuration = tonumber(payload.flashDuration) or flashDuration
+	elseif tonumber(payload) then
+		flashDuration = tonumber(payload)
+	end
+
 	task.spawn(function()
-		playNukeFlash(duration)
+		playNukeDarkPhase(darkDuration)
+		playNukeFlash(flashDuration)
+		clearNukeDarkPhase()
 	end)
 end)
 
