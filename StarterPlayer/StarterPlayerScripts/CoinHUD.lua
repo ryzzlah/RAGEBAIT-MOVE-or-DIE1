@@ -3,10 +3,12 @@
 -- Reads leaderstats.Coins (preferred) and falls back to player Attribute "Coins".
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local player = Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
+local matchState = ReplicatedStorage:WaitForChild("MatchState")
 
 local function mk(parent, className, props)
 	local o = Instance.new(className)
@@ -21,7 +23,7 @@ end
 local old = playerGui:FindFirstChild("CoinsHUD")
 if old then old:Destroy() end
 
--- ‘£‡ More reliable mobile detection:
+-- More reliable mobile detection:
 -- If Touch is enabled, we treat it as mobile (even if Roblox claims a keyboard exists).
 local isMobile = UserInputService.TouchEnabled
 
@@ -42,10 +44,19 @@ local gui = mk(playerGui, "ScreenGui", {
 	ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
 })
 
+local inMatch = false
+local function isDeadInRound()
+	return player:GetAttribute("InRound") == true and player:GetAttribute("AliveInRound") == false
+end
+
+local function refreshVisibility()
+	gui.Enabled = (not inMatch) or isDeadInRound()
+end
+
 local frame = mk(gui, "Frame", {
 	AnchorPoint = Vector2.new(0, 1),
 	Position = isMobile and MOBILE_POS or PC_POS,
-	Size = UDim2.new(0, 210, 0, 46), -- ‘£‡ keep size same for PC; still fine on mobile
+	Size = UDim2.new(0, 210, 0, 46), -- keep size same for PC; still fine on mobile
 	BackgroundColor3 = Color3.fromRGB(18, 18, 18),
 	BackgroundTransparency = 0.25,
 	BorderSizePixel = 0,
@@ -62,7 +73,7 @@ local label = mk(frame, "TextLabel", {
 	Font = Enum.Font.GothamBold,
 	TextSize = isMobile and 26 or 30,
 	TextColor3 = Color3.fromRGB(255, 255, 255),
-	Text = "≠É∆¶ Coins: ...",
+	Text = " Coins: ...",
 })
 
 -- ---------- Data hookup ----------
@@ -78,7 +89,7 @@ end
 
 local function setText(n)
 	n = tonumber(n) or 0
-	label.Text = ("≠É∆¶ Coins: %d"):format(n)
+	label.Text = (" Coins: %d"):format(n)
 end
 
 local function bindToCoinsIntValue(intValue)
@@ -149,3 +160,18 @@ task.defer(function()
 	watchLeaderstats()
 end)
 
+-- ===== visibility control =====
+matchState.OnClientEvent:Connect(function(v)
+	inMatch = (v == true)
+	refreshVisibility()
+end)
+
+player:GetAttributeChangedSignal("InRound"):Connect(function()
+	refreshVisibility()
+end)
+
+player:GetAttributeChangedSignal("AliveInRound"):Connect(function()
+	refreshVisibility()
+end)
+
+refreshVisibility()
